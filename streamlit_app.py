@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import google.generativeai as genai
 from datetime import datetime
+import time
 
 # --- 1. CONFIGURATION ---
 st.set_page_config(
@@ -10,48 +11,42 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. DOM-LEVEL CSS FIXES ---
+# --- 2. CSS THEME LOCK (Black & Red) ---
 st.markdown("""
     <style>
-    /* 1. GLOBAL RESET */
+    /* GLOBAL RESET */
     @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
     * { font-family: 'Segoe UI', sans-serif !important; }
     
-    /* 2. FORCE DARKNESS (ROOT LEVEL) */
+    /* FORCE DARK THEME */
     html, body, .stApp {
         background-color: #000000 !important;
         color: #FFFFFF !important;
     }
     
-    /* 3. SIDEBAR FIX (TARGETING THE PARENT ELEMENT) */
+    /* SIDEBAR FIX */
     [data-testid="stSidebar"] {
         background-color: #050505 !important;
         border-right: 1px solid #222 !important;
     }
-    /* This targets the internal container that often turns white */
     [data-testid="stSidebar"] > div:first-child {
         background-color: #050505 !important;
     }
     
-    /* 4. FILE UPLOADER (RED & BLACK) */
+    /* FILE UPLOADER */
     [data-testid="stFileUploader"] {
         background-color: #111111 !important;
         border: 1px dashed #444 !important;
         padding: 15px !important;
         border-radius: 0px !important;
     }
-    [data-testid="stFileUploader"] section {
-        background-color: #111111 !important;
-    }
-    /* Force text inside uploader to be visible */
     [data-testid="stFileUploader"] div, 
     [data-testid="stFileUploader"] span, 
     [data-testid="stFileUploader"] small {
         color: #AAAAAA !important;
     }
     
-    /* 5. BUTTONS */
-    /* Browse Files - Solid Red */
+    /* BUTTONS */
     [data-testid="stFileUploader"] button {
         background-color: #AD1212 !important;
         color: #FFFFFF !important;
@@ -59,14 +54,12 @@ st.markdown("""
         font-weight: 700 !important;
         text-transform: uppercase !important;
     }
-    /* Download Log */
     [data-testid="stDownloadButton"] button {
         background-color: #000000 !important;
         color: #FFFFFF !important;
         border: 1px solid #AD1212 !important;
         width: 100%;
     }
-    /* Terminate */
     div.stButton > button {
         background-color: #111111 !important;
         color: #888888 !important;
@@ -74,7 +67,7 @@ st.markdown("""
         width: 100%;
     }
 
-    /* 6. INPUT BOX */
+    /* CHAT INPUT */
     div[data-testid="stChatInput"] {
         background-color: #000000 !important;
         border: 2px solid #AD1212 !important;
@@ -88,12 +81,10 @@ st.markdown("""
         color: #666 !important;
     }
     
-    /* 7. VISIBILITY & UI CLEANUP */
+    /* UI CLEANUP */
     h1, h2, h3 { color: #FFFFFF !important; }
     p, span, div, label { color: #CCCCCC !important; }
-    
-    [data-testid="stHeader"] { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
+    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
     
     div[data-testid="stChatMessage"] {
         background-color: #0E0E0E !important;
@@ -183,7 +174,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 6. AI ENGINE (HARDCODED GEMINI 2.0 FLASH) ---
+# --- 6. AI ENGINE (GEMINI 2.5 FLASH w/ RETRY) ---
 if prompt := st.chat_input("INITIALIZE STRATEGIC QUERY..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()
@@ -193,8 +184,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
         
-        # --- EXPLICITLY TARGETING GEMINI 2.0 FLASH ---
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        # TARGETING GEMINI 2.5 FLASH
+        model = genai.GenerativeModel('gemini-2.5-flash')
 
         client_context = ""
         if uploaded_file:
@@ -207,17 +198,28 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         Context: {client_context}
         """
         
-        response = model.generate_content(f"{system_prompt}\n\nQUERY: {st.session_state.messages[-1]['content']}")
-        full_response = response.text
+        # RETRY LOOP FOR 429 ERRORS
+        max_retries = 3
+        full_response = ""
+        
+        for attempt in range(max_retries):
+            try:
+                response = model.generate_content(f"{system_prompt}\n\nQUERY: {st.session_state.messages[-1]['content']}")
+                full_response = response.text
+                break # Success! Exit loop.
+            except Exception as e:
+                error_str = str(e)
+                if "429" in error_str and attempt < max_retries - 1:
+                    # If quota exceeded, wait and retry
+                    time.sleep(2) # Wait 2 seconds
+                    continue
+                else:
+                    # If it's not 429, or we ran out of retries, show error
+                    full_response = f"**SYSTEM ALERT**: {error_str}"
+                    break
 
     except Exception as e:
-        # If this fails, we list EXACTLY what is available to prove the issue
-        try:
-            available_models = [m.name for m in genai.list_models()]
-            model_list_str = "\n".join(available_models)
-            full_response = f"**SYSTEM ALERT**: `gemini-2.0-flash-exp` failed.\n\n**AVAILABLE MODELS**:\n{model_list_str}\n\n**ERROR**: {str(e)}"
-        except:
-            full_response = f"**CRITICAL CONNECTION FAILURE**: {str(e)}"
+        full_response = f"**CRITICAL FAILURE**: {str(e)}"
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
