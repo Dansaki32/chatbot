@@ -10,25 +10,30 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. NUCLEAR CSS (Sidebar Fix) ---
+# --- 2. DOM-LEVEL CSS FIXES ---
 st.markdown("""
     <style>
     /* 1. GLOBAL RESET */
     @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
     * { font-family: 'Segoe UI', sans-serif !important; }
     
-    /* 2. FORCE DARK THEME (The Fix for White Sidebar) */
-    .stApp { background-color: #000000 !important; }
+    /* 2. FORCE DARKNESS (ROOT LEVEL) */
+    html, body, .stApp {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+    }
     
-    /* Target EVERY possible sidebar container */
-    section[data-testid="stSidebar"], 
-    div[data-testid="stSidebar"],
-    div[data-testid="stSidebarNav"] {
+    /* 3. SIDEBAR FIX (TARGETING THE PARENT ELEMENT) */
+    [data-testid="stSidebar"] {
         background-color: #050505 !important;
         border-right: 1px solid #222 !important;
     }
+    /* This targets the internal container that often turns white */
+    [data-testid="stSidebar"] > div:first-child {
+        background-color: #050505 !important;
+    }
     
-    /* 3. FIX THE UPLOADER BOX (White Box Fix) */
+    /* 4. FILE UPLOADER (RED & BLACK) */
     [data-testid="stFileUploader"] {
         background-color: #111111 !important;
         border: 1px dashed #444 !important;
@@ -38,35 +43,38 @@ st.markdown("""
     [data-testid="stFileUploader"] section {
         background-color: #111111 !important;
     }
+    /* Force text inside uploader to be visible */
     [data-testid="stFileUploader"] div, 
     [data-testid="stFileUploader"] span, 
     [data-testid="stFileUploader"] small {
-        color: #AAAAAA !important; /* Force text visible */
+        color: #AAAAAA !important;
     }
     
-    /* 4. BUTTONS */
-    /* Browse Files - Red */
+    /* 5. BUTTONS */
+    /* Browse Files - Solid Red */
     [data-testid="stFileUploader"] button {
         background-color: #AD1212 !important;
         color: #FFFFFF !important;
         border: none !important;
-        font-weight: bold !important;
+        font-weight: 700 !important;
         text-transform: uppercase !important;
     }
-    /* Download Log - Black w/ Red Border */
+    /* Download Log */
     [data-testid="stDownloadButton"] button {
         background-color: #000000 !important;
         color: #FFFFFF !important;
         border: 1px solid #AD1212 !important;
+        width: 100%;
     }
-    /* Terminate - Grey */
+    /* Terminate */
     div.stButton > button {
         background-color: #111111 !important;
         color: #888888 !important;
         border: 1px solid #333 !important;
+        width: 100%;
     }
 
-    /* 5. INPUT BOX */
+    /* 6. INPUT BOX */
     div[data-testid="stChatInput"] {
         background-color: #000000 !important;
         border: 2px solid #AD1212 !important;
@@ -76,16 +84,17 @@ st.markdown("""
         color: #FFFFFF !important;
         caret-color: #AD1212 !important;
     }
+    div[data-testid="stChatInput"] textarea::placeholder {
+        color: #666 !important;
+    }
     
-    /* 6. VISIBILITY FIXES */
+    /* 7. VISIBILITY & UI CLEANUP */
     h1, h2, h3 { color: #FFFFFF !important; }
     p, span, div, label { color: #CCCCCC !important; }
     
-    /* Hide Header/Toolbar Artifacts */
     [data-testid="stHeader"] { display: none !important; }
     [data-testid="stToolbar"] { display: none !important; }
     
-    /* Chat Bubbles */
     div[data-testid="stChatMessage"] {
         background-color: #0E0E0E !important;
         border: 1px solid #222;
@@ -174,7 +183,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 6. AI ENGINE (DIRECT CONNECTION) ---
+# --- 6. AI ENGINE (HARDCODED GEMINI 2.0 FLASH) ---
 if prompt := st.chat_input("INITIALIZE STRATEGIC QUERY..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()
@@ -184,9 +193,8 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
         
-        # --- DIRECT CONNECTION (No Loops) ---
-        # Using the standard stable model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # --- EXPLICITLY TARGETING GEMINI 2.0 FLASH ---
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
         client_context = ""
         if uploaded_file:
@@ -203,8 +211,13 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         full_response = response.text
 
     except Exception as e:
-        # Show the ACTUAL error to help debug
-        full_response = f"**SYSTEM ERROR**: {str(e)}"
+        # If this fails, we list EXACTLY what is available to prove the issue
+        try:
+            available_models = [m.name for m in genai.list_models()]
+            model_list_str = "\n".join(available_models)
+            full_response = f"**SYSTEM ALERT**: `gemini-2.0-flash-exp` failed.\n\n**AVAILABLE MODELS**:\n{model_list_str}\n\n**ERROR**: {str(e)}"
+        except:
+            full_response = f"**CRITICAL CONNECTION FAILURE**: {str(e)}"
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
