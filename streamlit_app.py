@@ -10,95 +10,96 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. NUCLEAR CSS OVERRIDES ---
+# --- 2. CSS OVERRIDES ---
 st.markdown("""
     <style>
-    /* 1. GLOBAL RESET & FONT */
+    /* GLOBAL FONTS & RESET */
     @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
     * { font-family: 'Segoe UI', sans-serif !important; }
     
-    /* 2. FORCE DARK BACKGROUNDS (The Fix) */
+    /* BACKGROUNDS */
     .stApp { background-color: #000000 !important; }
     
-    /* 3. FIX THE BOTTOM WHITE BAR */
-    div[data-testid="stBottom"] {
-        background-color: #000000 !important;
-        border-top: 1px solid #1A1A1A;
+    /* --- FIX 1: THE FILE UPLOADER (BROWSE BUTTON) --- */
+    
+    /* 1. The Container */
+    div[data-testid="stFileUploader"] {
+        background-color: #111111 !important;
+        border: 1px dashed #333 !important;
+        padding: 20px;
+        border-radius: 0px;
     }
-    /* This targets the internal container of the bottom bar */
-    div[data-testid="stBottom"] > div {
-        background-color: #000000 !important;
+    
+    /* 2. The Text inside the box (Drag & Drop + Limit text) */
+    div[data-testid="stFileUploader"] div, 
+    div[data-testid="stFileUploader"] span, 
+    div[data-testid="stFileUploader"] small {
+        color: #AAAAAA !important; /* Light Grey Text */
+    }
+    
+    /* 3. The "Browse files" Button - FORCE RED BACKGROUND */
+    div[data-testid="stFileUploader"] button {
+        background-color: #AD1212 !important; /* Solid Red */
+        color: #FFFFFF !important; /* White Text */
+        border: none !important;
+        border-radius: 4px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.3s ease !important;
+    }
+    /* Hover State */
+    div[data-testid="stFileUploader"] button:hover {
+        background-color: #D31515 !important;
+        box-shadow: 0 0 8px rgba(173, 18, 18, 0.6) !important;
     }
 
-    /* 4. FIX THE CHAT INPUT (The Invisible Text Fix) */
+    /* --- FIX 2: THE CHAT INPUT (KEEPING IT DARK) --- */
     div[data-testid="stChatInput"] {
         background-color: #000000 !important;
         border: 2px solid #AD1212 !important;
         border-radius: 4px !important;
     }
-    
-    /* TARGET THE ACTUAL TYPING AREA */
     div[data-testid="stChatInput"] textarea {
-        background-color: #000000 !important; /* Force Black Background */
-        color: #FFFFFF !important; /* Force White Text */
-        caret-color: #AD1212 !important; /* Red Cursor */
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        caret-color: #AD1212 !important;
+    }
+    div[data-testid="stChatInput"] textarea::placeholder {
+        color: #666666 !important;
     }
     
-    /* TARGET THE PLACEHOLDER TEXT */
-    div[data-testid="stChatInput"] textarea::placeholder {
-        color: #888888 !important;
+    /* --- FIX 3: THE BOTTOM BAR (REMOVE WHITE STRIP) --- */
+    div[data-testid="stBottom"] {
+        background-color: #000000 !important;
+        border-top: 1px solid #1A1A1A;
+    }
+    div[data-testid="stBottom"] > div {
+        background-color: #000000 !important;
     }
 
-    /* 5. SIDEBAR STYLING */
+    /* --- SIDEBAR & GENERAL UI --- */
     section[data-testid="stSidebar"] {
         background-color: #0A0A0A !important;
         border-right: 1px solid #222;
         width: 320px !important;
     }
     
-    /* 6. FILE UPLOADER & BUTTONS (Fixing the White Buttons) */
-    div[data-testid="stFileUploader"] {
-        background-color: #111 !important;
-        border: 1px dashed #444 !important;
-        padding: 15px;
-        border-radius: 0px;
-    }
-    div[data-testid="stFileUploader"] section { background-color: #111 !important; }
+    /* Hide Header & Toolbar */
+    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
     
-    /* BROWSE BUTTON - Force Red Outline */
-    button[data-testid="baseButton-secondary"] {
-        background-color: transparent !important;
-        border: 1px solid #AD1212 !important;
-        color: #AD1212 !important;
-        font-weight: bold !important;
-        transition: all 0.3s;
-    }
-    button[data-testid="baseButton-secondary"]:hover {
-        background-color: #AD1212 !important;
-        color: #FFFFFF !important;
-    }
-    
-    /* TERMINATE BUTTON */
-    div.stButton > button {
-        background-color: #111 !important;
-        color: #FFFFFF !important;
-        border: 1px solid #333 !important;
-    }
-
-    /* 7. TEXT VISIBILITY FIXES */
-    h1, h2, h3, p, span, div { color: #FFFFFF; } /* Default to white text */
-    .stMarkdown p { color: #E0E0E0 !important; }
-    
-    /* 8. HIDE STREAMLIT UI */
-    [data-testid="stHeader"] { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
-    div[data-testid="stFileUploader"] .st-emotion-cache-1fttcpj { display: none !important; }
-
-    /* 9. CHAT BUBBLES */
+    /* Chat Bubbles */
     div[data-testid="stChatMessage"] {
         background-color: #0E0E0E !important;
         border: 1px solid #222;
         border-left: 3px solid #AD1212 !important;
+    }
+    
+    /* Terminate Button */
+    div.stButton > button {
+        background-color: #111 !important;
+        color: #FFF !important;
+        border: 1px solid #333 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -123,16 +124,19 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Data
-    st.markdown("<p style='color:#AD1212 !important; font-size:0.7rem; font-weight:bold;'>01 // DATA INGESTION</p>", unsafe_allow_html=True)
+    # Data Ingestion
+    st.markdown("<p style='color:#AD1212 !important; font-size:0.7rem; font-weight:bold; margin-bottom:5px;'>01 // DATA INGESTION</p>", unsafe_allow_html=True)
+    
+    # The Uploader (Now styled with CSS above)
     uploaded_file = st.file_uploader("Upload Data", type=["csv", "tsv"], label_visibility="collapsed")
+    
     if uploaded_file:
-        st.success("DATASET MOUNTED")
+        st.markdown("<div style='color:#4CAF50; font-size:0.7rem; margin-top:5px;'>✓ DATASET MOUNTED</div>", unsafe_allow_html=True)
     
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
-    # Export
-    st.markdown("<p style='color:#AD1212 !important; font-size:0.7rem; font-weight:bold;'>02 // SYSTEM LOGS</p>", unsafe_allow_html=True)
+    # System Logs
+    st.markdown("<p style='color:#AD1212 !important; font-size:0.7rem; font-weight:bold; margin-bottom:5px;'>02 // SYSTEM LOGS</p>", unsafe_allow_html=True)
     if "messages" in st.session_state and len(st.session_state.messages) > 0:
         report_text = f"QR_ STRATEGY LOG\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
         for m in st.session_state.messages:
@@ -148,7 +152,6 @@ with st.sidebar:
         st.rerun()
 
 # --- 5. MAIN INTERFACE ---
-# Title Area
 st.markdown("""
     <div style='display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;'>
         <div>
@@ -164,7 +167,7 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Welcome Cards (Zero State)
+# Zero State Cards
 if len(st.session_state.messages) == 0:
     st.markdown("<br>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
