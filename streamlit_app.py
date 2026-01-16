@@ -3,145 +3,155 @@ import pandas as pd
 import google.generativeai as genai
 from datetime import datetime
 
-# --- 1. PAGE CONFIG ---
+# --- 1. SYSTEM CONFIGURATION ---
 st.set_page_config(
-    page_title="QR_ Strategy Hub",
+    page_title="QR_ Strategy OS",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. THE DESIGN ENGINE (CSS) ---
+# --- 2. THE "ULTRA-PROFESSIONAL" CSS ENGINE ---
 st.markdown("""
     <style>
-    /* IMPORT FONT */
+    /* 1. CORE TYPOGRAPHY & RESET */
     @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
-
-    /* GLOBAL RESET - FORCE BLACK BACKGROUND EVERYWHERE */
-    html, body, [class*="st-"] {
+    
+    * {
         font-family: 'Segoe UI', sans-serif !important;
-        color: #FFFFFF !important;
+        box-sizing: border-box;
     }
+    
+    /* 2. GLOBAL THEME - PURE OLED BLACK */
     .stApp {
         background-color: #000000 !important;
+        color: #FFFFFF !important;
     }
-
-    /* --- KILL THE WHITE BAR AT THE BOTTOM --- */
-    /* This targets the sticky footer container that holds the chat input */
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+    
+    /* 3. ARTIFACT REMOVAL (The "keyboard_double" & Header Fix) */
+    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stSidebarNav"] { display: none !important; }
+    [data-testid="stToolbar"] { display: none !important; } /* Hides 'Manage App' */
+    header { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
+    
+    /* 4. SIDEBAR - THE CONTROL PANEL */
+    section[data-testid="stSidebar"] {
+        background-color: #050505 !important;
+        border-right: 1px solid #1A1A1A;
+        width: 320px !important;
+    }
+    
+    /* Force ALL sidebar text to be visible */
+    section[data-testid="stSidebar"] * {
+        color: #E0E0E0 !important;
+    }
+    
+    /* 5. THE BOTTOM BAR FIX (Removes the white background) */
     [data-testid="stBottom"] {
         background-color: #000000 !important;
         border-top: 1px solid #1A1A1A;
+        padding-bottom: 20px;
     }
     .stChatFloatingInputContainer {
         background-color: #000000 !important;
     }
 
-    /* --- SIDEBAR ALIGNMENT & DESIGN --- */
-    section[data-testid="stSidebar"] {
-        background-color: #050505 !important;
-        border-right: 1px solid #AD1212; /* Red border to separate sidebar */
-        width: 320px !important;
-        padding-top: 2rem !important;
-    }
-    /* Fix alignment of sidebar elements */
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
-    /* --- QR_ BRANDING --- */
-    .qr-logo {
-        font-size: 2.8rem;
-        font-weight: 800;
-        color: #FFFFFF;
-        line-height: 1;
-        letter-spacing: -2px;
-        margin-bottom: 0px;
-    }
-    .qr-logo span { color: #AD1212; }
-    
-    .qr-sub {
-        font-size: 0.7rem;
-        color: #888;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin-bottom: 40px;
-        display: block;
-    }
-
-    /* --- FILE UPLOADER (TOTAL FIX) --- */
-    div[data-testid="stFileUploader"] {
+    /* 6. INPUT BOX - COMMAND LINE STYLE */
+    div[data-testid="stChatInput"] {
         background-color: #000000 !important;
-        border: 1px solid #333 !important;
-        border-radius: 4px;
-        padding: 10px;
-        margin-bottom: 20px;
+        border: 1px solid #AD1212 !important;
+        border-radius: 0px !important; /* Sharp edges */
+        padding: 2px !important;
+    }
+    div[data-testid="stChatInput"] textarea {
+        color: #FFFFFF !important;
+        background-color: transparent !important;
+        font-size: 0.9rem !important;
+        letter-spacing: 0.5px;
+    }
+    div[data-testid="stChatInput"] ::placeholder {
+        color: #666 !important;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+
+    /* 7. FILE UPLOADER - VISIBLE & CLEAN */
+    div[data-testid="stFileUploader"] {
+        background-color: #0A0A0A !important;
+        border: 1px dashed #333 !important;
+        border-radius: 0px;
+        padding: 15px;
     }
     div[data-testid="stFileUploader"] section {
-        background-color: #000000 !important;
+        background-color: transparent !important;
     }
-    /* Hide the 'Drag and drop' text and icon */
-    [data-testid="stFileUploader"] .st-emotion-cache-1fttcpj { display: none !important; }
-    [data-testid="stFileUploader"] span { display: none !important; }
-    [data-testid="stFileUploader"] small { display: none !important; }
-    
-    /* STYLE THE BROWSE BUTTON */
+    /* The 'Browse files' button */
     button[data-testid="baseButton-secondary"] {
-        background-color: #000000 !important;
+        background-color: transparent !important;
         border: 1px solid #AD1212 !important;
         color: #FFFFFF !important;
         width: 100%;
         border-radius: 0px !important;
         text-transform: uppercase;
-        font-size: 0.75rem !important;
-        letter-spacing: 1px;
-        padding: 0.5rem 0;
+        font-weight: 600;
+        font-size: 0.7rem !important;
+        transition: all 0.2s;
     }
     button[data-testid="baseButton-secondary"]:hover {
         background-color: #AD1212 !important;
-        color: #FFFFFF !important;
-        border-color: #AD1212 !important;
+        color: white !important;
     }
+    /* Hide the drag/drop icon/text to keep it minimal */
+    [data-testid="stFileUploader"] .st-emotion-cache-1fttcpj { display: none !important; }
+    [data-testid="stFileUploader"] small { display: none !important; }
 
-    /* --- CHAT INPUT (BLACK & RED) --- */
-    div[data-testid="stChatInput"] {
-        background-color: #000000 !important;
-        border: 1px solid #AD1212 !important;
-        border-radius: 0px !important; /* Sharp corners */
-    }
-    div[data-testid="stChatInput"] textarea {
-        color: #FFFFFF !important;
-        background-color: transparent !important;
-    }
-
-    /* --- CHAT MESSAGES --- */
+    /* 8. CHAT BUBBLES - PROFESSIONAL */
     div[data-testid="stChatMessage"] {
-        background-color: #0A0A0A !important;
-        border: none;
-        border-left: 2px solid #AD1212 !important;
-        padding: 1.5rem;
+        background-color: #080808 !important;
+        border: 1px solid #1A1A1A;
+        border-left: 3px solid #AD1212 !important;
+        border-radius: 0px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    /* 9. HEADERS & BRANDING */
+    .qr-header {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        line-height: 1;
+        letter-spacing: -2px;
+        margin-bottom: 5px;
+    }
+    .qr-accent { color: #AD1212; }
+    
+    .sidebar-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #AD1212 !important;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 10px;
+        display: block;
+        margin-top: 20px;
     }
 
-    /* --- BUTTONS (TERMINATE) --- */
+    /* 10. BUTTONS */
     div.stButton > button {
         background-color: #111 !important;
         border: 1px solid #333 !important;
-        color: #666 !important;
+        color: #888 !important;
         border-radius: 0px;
         text-transform: uppercase;
         font-size: 0.7rem;
         letter-spacing: 1px;
+        width: 100%;
     }
     div.stButton > button:hover {
         border-color: #AD1212 !important;
         color: #AD1212 !important;
     }
-    
-    /* HIDE STREAMLIT UI CRUFT */
-    [data-testid="stToolbar"] {display: none !important;}
-    [data-testid="stHeader"] {display: none !important;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -155,43 +165,50 @@ def load_structure():
 
 schema_df = load_structure()
 
-# --- 4. SIDEBAR ---
+# --- 4. SIDEBAR LAYOUT (PRECISE ALIGNMENT) ---
 with st.sidebar:
-    st.markdown('<div class="qr-logo">QR<span>_</span></div>', unsafe_allow_html=True)
-    st.markdown('<span class="qr-sub">STRATEGY OPERATING SYSTEM</span>', unsafe_allow_html=True)
+    # 4.1 Logo
+    st.markdown('<div class="qr-header">QR<span class="qr-accent">_</span></div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 0.7rem; color: #666; letter-spacing: 2px; margin-bottom: 30px;">STRATEGY OPERATING SYSTEM</div>', unsafe_allow_html=True)
     
-    st.markdown("<p style='color:#AD1212; font-weight:bold; font-size:0.8rem; margin-bottom:5px;'>01 // DATA INGESTION</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # 4.2 Data Module
+    st.markdown('<span class="sidebar-label">01 // DATA INGESTION</span>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload Client Data", type=["csv", "tsv"], label_visibility="collapsed")
+    
     if uploaded_file:
-        st.success("DATA MOUNTED")
-
-    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True) # Spacer
-
-    st.markdown("<p style='color:#AD1212; font-weight:bold; font-size:0.8rem; margin-bottom:5px;'>02 // OUTPUTS</p>", unsafe_allow_html=True)
+        st.markdown('<div style="color:#4CAF50; font-size:0.7rem; margin-top:5px;">● DATASET MOUNTED</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # 4.3 Export Module
+    st.markdown('<span class="sidebar-label">02 // SYSTEM LOGS</span>', unsafe_allow_html=True)
     
     if "messages" in st.session_state and len(st.session_state.messages) > 0:
         report_text = f"QR_ STRATEGY LOG\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
         for m in st.session_state.messages:
             report_text += f"[{m['role'].upper()}]\n{m['content']}\n\n"
-        
+            
         st.download_button(
-            label="DOWNLOAD LOG",
+            label="DOWNLOAD SESSION LOG",
             data=report_text,
             file_name=f"QR_Log_{datetime.now().strftime('%H%M')}.txt",
             mime="text/plain"
         )
     else:
-        st.markdown("<span style='color:#444; font-size:0.75rem;'>Awaiting Session Data...</span>", unsafe_allow_html=True)
+        st.markdown('<div style="font-size:0.7rem; color:#444;">NO ACTIVE TELEMETRY</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True) # Spacer
-    
+    # 4.4 Footer
+    st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
     if st.button("TERMINATE SESSION"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 5. MAIN PAGE ---
-st.markdown('# QR<span>_</span> Strategy Assistant', unsafe_allow_html=True)
-st.markdown('<div style="color:#AD1212; font-weight:bold; font-size:0.75rem; margin-bottom:40px; letter-spacing:1px;">● SENIOR DIRECTOR PERSONA ONLINE</div>', unsafe_allow_html=True)
+# --- 5. MAIN INTERFACE ---
+# Title
+st.markdown('<div class="qr-header" style="font-size: 2.5rem;">QR<span class="qr-accent">_</span> STRATEGY</div>', unsafe_allow_html=True)
+st.markdown('<div style="font-size: 0.8rem; color: #AD1212; letter-spacing: 1px; margin-bottom: 40px; font-weight:bold;">● SENIOR DIRECTOR PERSONA ONLINE</div>', unsafe_allow_html=True)
 
 # Chat History
 if "messages" not in st.session_state:
@@ -201,8 +218,8 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. LOGIC ---
-if prompt := st.chat_input("INITIALIZE QUERY..."):
+# --- 6. AI ENGINE ---
+if prompt := st.chat_input("INITIALIZE STRATEGIC QUERY..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -221,6 +238,11 @@ if prompt := st.chat_input("INITIALIZE QUERY..."):
         You are the Quick Release (QR_) Senior Account Strategy Director.
         Reference: {schema_df.to_string()}
         Context: {client_context}
+        
+        Style Guide:
+        - Use Markdown Headers (###)
+        - Professional, Executive Tone
+        - Bullet points for clarity
         """
         
         response = model.generate_content(f"{system_prompt}\n\nQUERY: {prompt}")
