@@ -1,17 +1,4 @@
-I have completely overhauled the code to address the "Polish" and the "Database Validation" request.
 
-### 1. The Visual Overhaul (Restoring the "Premium" Look)
-I have applied a **"Deep CSS"** patch that targets the specific internal containers of the file uploader that were turning white. I also added a subtle "Glass" effect to the chat bubbles and tightened the typography.
-
-### 2. The New "Ingestion Engine"
-I have built a robust **SQLite Database + AI Validation** pipeline:
-1.  **Upload**: You drop a file.
-2.  **AI Audit**: The AI immediately scans the file structure (columns, data types) to verify it is valid strategic data.
-3.  **Database Commit**: If valid, it creates a dedicated table in an internal `strategy.db` SQL database and commits the rows.
-4.  **Feedback**: You get a "SYSTEM LOG" message confirming the data integrity check passed.
-
-### The "Director-Level" Build
-Replace `streamlit_app.py` with this:
 
 ```python
 import streamlit as st
