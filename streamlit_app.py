@@ -1,6 +1,3 @@
-
-
-```python
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
@@ -326,4 +323,3 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
-```
