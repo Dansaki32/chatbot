@@ -3,35 +3,77 @@ import pandas as pd
 import google.generativeai as genai
 from datetime import datetime
 
-# --- 1. BRANDING & COLORS ---
-QR_RED_MAIN = "#AD1212"
-QR_RED_DARK = "#9E0B2E"
-QR_RED_LIGHT = "#D63030"
-QR_WHITE = "#FFFFFF"
+# --- 1. BRANDING & THEME (Segoe UI / Black / Red) ---
+QR_RED = "#AD1212"
+QR_DARK_RED = "#9E0B2E"
+BLACK = "#000000"
+WHITE = "#FFFFFF"
 
-st.set_page_config(page_title="QR Account Strategy Bot", layout="wide")
+st.set_page_config(page_title="QR Strategy Assistant", layout="wide")
 
-# Custom CSS for Branding
+# Custom CSS for the requested look
 st.markdown(f"""
     <style>
-    .stApp {{ background-color: {QR_WHITE}; }}
+    /* Main App Background and Font */
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap');
+    
+    .stApp {{
+        background-color: {BLACK};
+        color: {WHITE};
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }}
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {{
+        background-color: #111111;
+        border-right: 1px solid {QR_RED};
+        color: {WHITE};
+    }}
+
+    /* Headers */
+    h1, h2, h3, p, span, label {{
+        color: {WHITE} !important;
+        font-family: 'Segoe UI' !important;
+    }}
+
+    /* Input Box */
+    .stChatFloatingInputContainer {{
+        background-color: {BLACK};
+    }}
+    
+    div[data-testid="stChatInput"] {{
+        border: 1px solid {QR_RED} !important;
+        border-radius: 10px;
+    }}
+
+    /* Buttons */
     .stButton>button {{
-        background-color: {QR_RED_MAIN};
-        color: white;
-        border-radius: 5px;
+        background-color: {QR_RED};
+        color: {WHITE};
+        border-radius: 4px;
         border: none;
+        width: 100%;
+        font-weight: bold;
     }}
     .stButton>button:hover {{
-        background-color: {QR_RED_LIGHT};
-        border: none;
-        color: white;
+        background-color: {QR_DARK_RED};
+        color: {WHITE};
     }}
-    h1, h2, h3 {{ color: {QR_RED_DARK}; }}
-    .stChatFloatingInputContainer {{ background-color: {QR_WHITE}; }}
-    /* Sidebar styling */
-    section[data-testid="stSidebar"] {{
-        background-color: #f8f9fa;
-        border-right: 2px solid {QR_RED_MAIN};
+
+    /* File Uploader Design */
+    div[data-testid="stFileUploader"] {{
+        background-color: #1a1a1a;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px dashed {QR_RED};
+    }}
+
+    /* Chat Bubbles */
+    div[data-testid="stChatMessage"] {{
+        background-color: #1a1a1a;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border-left: 3px solid {QR_RED};
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -46,94 +88,88 @@ def load_structure():
 
 schema_df = load_structure()
 
-st.title("🔴 Quick Release Account Strategy Assistant")
-st.subheader("Strategic Planning & Client Insights")
-
-# --- 3. SIDEBAR CONFIG ---
+# --- 3. SIDEBAR (Locked Configuration) ---
 with st.sidebar:
-    st.image("https://www.quickrelease.co.uk/hubfs/QR_Logo_Red_RGB.png", width=200) # Placeholder for logo
-    st.header("Configuration")
-    google_api_key = st.text_input("Enter Gemini API Key", type="password")
+    st.image("https://www.quickrelease.co.uk/hubfs/QR_Logo_Red_RGB.png", width=180)
+    st.markdown(f"<h2 style='color:{QR_RED};'>STRATEGY HUB</h2>", unsafe_allow_html=True)
+    st.write("---")
     
-    available_models = []
-    if google_api_key:
-        try:
-            genai.configure(api_key=google_api_key)
-            models = genai.list_models()
-            available_models = [m.name.replace('models/', '') for m in models if 'generateContent' in m.supported_generation_methods]
-        except: pass
-
-    model_choice = st.selectbox("Select Model", available_models) if available_models else None
+    # Import Section
+    st.subheader("📁 Client Data")
+    uploaded_file = st.file_uploader("Upload CSV/TSV", type=["csv", "tsv"], label_visibility="collapsed")
     
     st.write("---")
-    uploaded_file = st.file_uploader("Upload Client Data (CSV/TSV)", type=["csv", "tsv"])
     
-    if st.button("🗑️ Clear Chat"):
+    # Export Section (Better Design)
+    st.subheader("📥 Export Report")
+    if "messages" in st.session_state and len(st.session_state.messages) > 0:
+        # Prepare text for export
+        report_content = f"QUICK RELEASE STRATEGY REPORT\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n" + "="*30 + "\n\n"
+        for m in st.session_state.messages:
+            report_content += f"[{m['role'].upper()}]:\n{m['content']}\n\n"
+        
+        st.download_button(
+            label="Download Session (.txt)",
+            data=report_content,
+            file_name=f"QR_Report_{datetime.now().strftime('%H%M')}.txt",
+            mime="text/plain"
+        )
+    else:
+        st.info("Start a chat to generate a report.")
+
+    if st.button("🗑️ Reset Session"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 4. CHAT HISTORY ---
+# --- 4. MAIN INTERFACE ---
+st.markdown(f"<h1><span style='color:{QR_RED};'>QR</span> Account Strategy Assistant</h1>", unsafe_allow_html=True)
+
+# Initialize Chat
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Display Chat
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 5. STRATEGY LOGIC & CHAT ---
-if prompt := st.chat_input("Ask a strategic question..."):
+# --- 5. LOGIC (Using Hidden Secret) ---
+if prompt := st.chat_input("Enter strategic query..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    if google_api_key and model_choice:
-        try:
-            client_data_context = ""
-            if uploaded_file:
-                df = pd.read_csv(uploaded_file)
-                client_data_context = f"\n\nACTUAL CLIENT DATA:\n{df.to_string()}"
+    # Get API Key from Secrets
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+        genai.configure(api_key=api_key)
+        
+        # Hardcoded to the most stable model for speed
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
-            # STEP 3: IMPROVED STRATEGY PERSONA
-            system_instruction = f"""
-            You are the Quick Release Senior Account Strategy Director. 
-            Your goal is to help Account Managers build world-class account plans.
-            
-            STRUCTURE GUIDELINE:
-            {schema_df.to_string()}
-            
-            {client_data_context}
-            
-            STRATEGIC RULES:
-            1. Always provide actionable advice. Don't just explain 'what' to do, explain 'how' to win.
-            2. If a client has 'Weak' relationship status, suggest specific stakeholder engagement tactics.
-            3. If the user asks for a plan, use the Structure Guideline to ensure all required QR sections are covered.
-            4. Use a professional, high-energy, and insightful tone.
-            """
-            
-            model = genai.GenerativeModel(model_choice)
-            response = model.generate_content(f"{system_instruction}\n\nUser: {prompt}")
-            full_response = response.text
-            
-        except Exception as e:
-            full_response = f"⚠️ Error: {str(e)}"
-    else:
-        full_response = "Please ensure your API Key is entered and a model is selected."
+        # Context Setup
+        client_data = ""
+        if uploaded_file:
+            df = pd.read_csv(uploaded_file)
+            client_data = f"\n\nACTUAL CLIENT DATA:\n{df.to_string()}"
+
+        system_prompt = f"""
+        You are the Quick Release Senior Account Strategy Director. 
+        Tone: Professional, Insightful, Action-Oriented.
+        Structure Reference: {schema_df.to_string()}
+        {client_data}
+        
+        Use Segoe UI style formatting (clear headings, bullet points).
+        """
+
+        response = model.generate_content(f"{system_prompt}\n\nUser: {prompt}")
+        full_response = response.text
+
+    except KeyError:
+        full_response = "⚠️ **Error:** API Key not found in Streamlit Secrets. Please add 'GEMINI_API_KEY' to your app settings."
+    except Exception as e:
+        full_response = f"⚠️ **Error:** {str(e)}"
 
     with st.chat_message("assistant"):
         st.markdown(full_response)
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-# --- 6. STEP 4: EXPORT FUNCTIONALITY ---
-if st.session_state.messages:
-    st.write("---")
-    # Prepare the chat history for export
-    report_text = f"QUICK RELEASE STRATEGY REPORT\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
-    for m in st.session_state.messages:
-        report_text += f"{m['role'].upper()}: {m['content']}\n\n"
-    
-    st.download_button(
-        label="📥 Download Strategy Report (.txt)",
-        data=report_text,
-        file_name=f"QR_Strategy_Report_{datetime.now().strftime('%d_%m_%Y')}.txt",
-        mime="text/plain"
-    )
