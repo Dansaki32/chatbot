@@ -10,92 +10,82 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. CSS OVERRIDES (THE FINAL POLISH) ---
+# --- 2. NUCLEAR CSS (Sidebar Fix) ---
 st.markdown("""
     <style>
     /* 1. GLOBAL RESET */
     @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
     * { font-family: 'Segoe UI', sans-serif !important; }
     
-    /* 2. FORCE DARK BACKGROUNDS */
+    /* 2. FORCE DARK THEME (The Fix for White Sidebar) */
     .stApp { background-color: #000000 !important; }
     
-    /* 3. SIDEBAR BUTTONS (CRITICAL FIXES) */
+    /* Target EVERY possible sidebar container */
+    section[data-testid="stSidebar"], 
+    div[data-testid="stSidebar"],
+    div[data-testid="stSidebarNav"] {
+        background-color: #050505 !important;
+        border-right: 1px solid #222 !important;
+    }
     
-    /* File Uploader Button - Force Red */
+    /* 3. FIX THE UPLOADER BOX (White Box Fix) */
+    [data-testid="stFileUploader"] {
+        background-color: #111111 !important;
+        border: 1px dashed #444 !important;
+        padding: 15px !important;
+        border-radius: 0px !important;
+    }
+    [data-testid="stFileUploader"] section {
+        background-color: #111111 !important;
+    }
+    [data-testid="stFileUploader"] div, 
+    [data-testid="stFileUploader"] span, 
+    [data-testid="stFileUploader"] small {
+        color: #AAAAAA !important; /* Force text visible */
+    }
+    
+    /* 4. BUTTONS */
+    /* Browse Files - Red */
     [data-testid="stFileUploader"] button {
         background-color: #AD1212 !important;
         color: #FFFFFF !important;
         border: none !important;
-        border-radius: 0px !important;
+        font-weight: bold !important;
         text-transform: uppercase !important;
-        font-weight: 700 !important;
-        padding: 0.5rem 1rem !important;
-        transition: all 0.3s ease !important;
     }
-    [data-testid="stFileUploader"] button:hover {
-        background-color: #FF0000 !important;
-        box-shadow: 0 0 10px rgba(173, 18, 18, 0.5) !important;
-    }
-    
-    /* Download Button - Force Black with Red Border */
+    /* Download Log - Black w/ Red Border */
     [data-testid="stDownloadButton"] button {
         background-color: #000000 !important;
         color: #FFFFFF !important;
         border: 1px solid #AD1212 !important;
-        border-radius: 0px !important;
-        text-transform: uppercase !important;
-        font-weight: 700 !important;
-        width: 100% !important;
     }
-    [data-testid="stDownloadButton"] button:hover {
-        background-color: #AD1212 !important;
-        color: #FFFFFF !important;
-    }
-    
-    /* Terminate Button - Dark Grey */
+    /* Terminate - Grey */
     div.stButton > button {
         background-color: #111111 !important;
         color: #888888 !important;
         border: 1px solid #333 !important;
-        border-radius: 0px !important;
-        width: 100%;
-        text-transform: uppercase;
-    }
-    div.stButton > button:hover {
-        border-color: #AD1212 !important;
-        color: #AD1212 !important;
     }
 
-    /* 4. TEXT VISIBILITY & CONTRAST */
-    h1, h2, h3 { color: #FFFFFF !important; }
-    p, span, div, label { color: #CCCCCC !important; }
-    
-    /* Fix Uploader Text Visibility */
-    [data-testid="stFileUploader"] div { color: #AAAAAA !important; }
-    [data-testid="stFileUploader"] small { color: #888888 !important; }
-
-    /* 5. INPUT BOX & BOTTOM BAR */
+    /* 5. INPUT BOX */
     div[data-testid="stChatInput"] {
         background-color: #000000 !important;
         border: 2px solid #AD1212 !important;
-        border-radius: 0px !important;
     }
     div[data-testid="stChatInput"] textarea {
         background-color: #000000 !important;
         color: #FFFFFF !important;
         caret-color: #AD1212 !important;
     }
-    div[data-testid="stChatInput"] textarea::placeholder {
-        color: #AAAAAA !important;
-    }
-    div[data-testid="stBottom"] { background-color: #000000 !important; border-top: 1px solid #222; }
-    div[data-testid="stBottom"] > div { background-color: #000000 !important; }
-
-    /* 6. HIDE JUNK */
-    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
     
-    /* 7. CHAT BUBBLES */
+    /* 6. VISIBILITY FIXES */
+    h1, h2, h3 { color: #FFFFFF !important; }
+    p, span, div, label { color: #CCCCCC !important; }
+    
+    /* Hide Header/Toolbar Artifacts */
+    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stToolbar"] { display: none !important; }
+    
+    /* Chat Bubbles */
     div[data-testid="stChatMessage"] {
         background-color: #0E0E0E !important;
         border: 1px solid #222;
@@ -184,7 +174,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 6. AI ENGINE (MODEL HUNTER) ---
+# --- 6. AI ENGINE (DIRECT CONNECTION) ---
 if prompt := st.chat_input("INITIALIZE STRATEGIC QUERY..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()
@@ -194,45 +184,27 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
         
-        # --- ROBUST MODEL SELECTION ---
-        # Tries multiple model names until one works.
-        model = None
-        # List of models to try in order of preference
-        models_to_try = [
-            "gemini-1.5-flash",          # Standard
-            "gemini-1.5-flash-latest",   # Latest alias
-            "gemini-1.5-flash-001",      # Specific version
-            "gemini-1.5-flash-002",      # Newer specific version
-            "gemini-2.0-flash-exp",      # Experimental 2.0
-            "gemini-pro"                 # Fallback
-        ]
-        
-        full_response = "Error: No models available."
-        
-        # Try generating with each model until success
-        for model_name in models_to_try:
-            try:
-                temp_model = genai.GenerativeModel(model_name)
-                
-                client_context = ""
-                if uploaded_file:
-                    df = pd.read_csv(uploaded_file)
-                    client_context = f"\n\n[CLIENT DATA]:\n{df.to_string()}"
+        # --- DIRECT CONNECTION (No Loops) ---
+        # Using the standard stable model
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
-                system_prompt = f"""
-                You are the Quick Release (QR_) Senior Account Strategy Director.
-                Reference: {schema_df.to_string()}
-                Context: {client_context}
-                """
-                
-                response = temp_model.generate_content(f"{system_prompt}\n\nQUERY: {st.session_state.messages[-1]['content']}")
-                full_response = response.text
-                break # If successful, stop the loop
-            except Exception:
-                continue # If failed, try the next model
+        client_context = ""
+        if uploaded_file:
+            df = pd.read_csv(uploaded_file)
+            client_context = f"\n\n[CLIENT DATA]:\n{df.to_string()}"
+
+        system_prompt = f"""
+        You are the Quick Release (QR_) Senior Account Strategy Director.
+        Reference: {schema_df.to_string()}
+        Context: {client_context}
+        """
+        
+        response = model.generate_content(f"{system_prompt}\n\nQUERY: {st.session_state.messages[-1]['content']}")
+        full_response = response.text
 
     except Exception as e:
-        full_response = f"**SYSTEM ALERT**: {str(e)}"
+        # Show the ACTUAL error to help debug
+        full_response = f"**SYSTEM ERROR**: {str(e)}"
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.rerun()
