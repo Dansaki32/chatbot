@@ -5,112 +5,123 @@ from datetime import datetime
 
 # --- 1. BRANDING & THEME ---
 QR_RED = "#AD1212"
-QR_DARK_RED = "#9E0B2E"
 BLACK = "#000000"
-DARK_GREY = "#141414"
+DARK_GREY = "#111111"
 WHITE = "#FFFFFF"
 
-st.set_page_config(page_title="QR Strategy Hub", layout="wide")
+st.set_page_config(page_title="QR_ Strategy Hub", layout="wide")
 
-# Advanced CSS for a High-End Look
+# Advanced Responsive CSS
 st.markdown(f"""
     <style>
-    /* Force Segoe UI everywhere */
+    /* Import Segoe UI */
     @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
-    * {{
+    
+    /* Global Styles */
+    html, body, [class*="st-"] {{
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        color: {WHITE} !important;
     }}
     
     .stApp {{
         background-color: {BLACK};
-        color: {WHITE};
     }}
 
-    /* Sidebar - Clean & Minimal */
+    /* Responsive Container */
+    [data-testid="block-container"] {{
+        padding-top: 2rem;
+        max-width: 1200px; /* Limits width on huge monitors for readability */
+        margin: auto;
+    }}
+
+    /* Sidebar - Responsive Width */
     section[data-testid="stSidebar"] {{
         background-color: {DARK_GREY} !important;
-        border-right: 1px solid #333;
-        padding-top: 2rem;
+        border-right: 1px solid #222;
+        min-width: 250px !important;
+        max-width: 350px !important;
     }}
-    
-    /* Title Styling */
-    h1 {{
-        font-weight: 800 !important;
-        font-size: 2.5rem !important;
+
+    /* QR_ Branding Style */
+    .qr-logo {{
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: {WHITE};
         letter-spacing: -1px;
+        margin-bottom: 0px;
+    }}
+    .red-underscore {{
+        color: {QR_RED} !important;
     }}
 
     /* AI Status Badge */
     .status-badge {{
-        background-color: #1a1a1a;
+        background-color: transparent;
         border: 1px solid {QR_RED};
-        color: {QR_RED};
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: bold;
+        color: {QR_RED} !important;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
         display: inline-block;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        text-transform: uppercase;
     }}
 
-    /* CLEAN FILE UPLOADER */
+    /* Clean File Uploader (No Artifacts) */
     div[data-testid="stFileUploader"] {{
         background-color: #000 !important;
         border: 1px solid #333 !important;
-        border-radius: 8px;
-        padding: 10px;
+        border-radius: 4px;
     }}
     div[data-testid="stFileUploader"] section {{
-        background-color: transparent !important;
+        padding: 0px !important;
     }}
-    /* The 'Browse Files' button inside */
-    button[data-testid="baseButton-secondary"] {{
-        background-color: {QR_RED} !important;
-        color: white !important;
-        border: none !important;
-        font-size: 0.8rem !important;
+    /* Hide the "drag and drop" text to keep it clean on small screens */
+    div[data-testid="stFileUploaderText"] {{
+        display: none;
     }}
 
-    /* CHAT INPUT - Floating Red Accent */
+    /* Chat Input - Responsive & Centered */
     div[data-testid="stChatInput"] {{
         border: 1px solid #333 !important;
-        background-color: #0a0a0a !important;
-        border-radius: 15px !important;
-        box-shadow: 0px 0px 15px rgba(173, 18, 18, 0.1);
+        background-color: #080808 !important;
+        border-radius: 8px !important;
+        margin-bottom: 20px;
     }}
     
-    /* CHAT BUBBLES */
+    /* Chat Bubbles */
     div[data-testid="stChatMessage"] {{
-        background-color: #0a0a0a !important;
+        background-color: #080808 !important;
         border: 1px solid #1a1a1a;
-        border-left: 3px solid {QR_RED} !important;
-        margin-bottom: 20px;
-        padding: 20px;
+        border-left: 2px solid {QR_RED} !important;
+        border-radius: 0px 8px 8px 0px;
+        margin-bottom: 15px;
     }}
 
-    /* BUTTONS */
+    /* Standardized Buttons */
     .stButton>button {{
         background-color: {QR_RED};
-        color: {WHITE};
-        border-radius: 6px;
-        font-weight: 600;
+        color: {WHITE} !important;
+        border-radius: 2px;
         border: none;
+        width: 100%;
+        font-size: 0.8rem;
+        font-weight: bold;
+        height: 40px;
     }}
     
-    /* DOWNLOAD BUTTON */
+    /* Download Button Styling */
     div.stDownloadButton > button {{
         background-color: transparent !important;
         border: 1px solid {QR_RED} !important;
-        color: {QR_RED} !important;
-        font-size: 0.8rem !important;
+        color: {WHITE} !important;
+        height: 40px;
     }}
-    div.stDownloadButton > button:hover {{
-        background-color: {QR_RED} !important;
-        color: white !important;
-    }}
-    
-    /* Hide Streamlit elements */
-    #MainMenu, footer, header {{visibility: hidden;}}
+
+    /* Hide Streamlit fluff */
+    #MainMenu, footer, header, [data-testid="stHeader"] {{visibility: hidden;}}
+    img {{ display: none !important; }} /* Force hide any broken image artifacts */
     </style>
     """, unsafe_allow_html=True)
 
@@ -126,31 +137,26 @@ schema_df = load_structure()
 
 # --- 3. SIDEBAR (The Control Panel) ---
 with st.sidebar:
-    # Reliable Logo Source (Fallback to Text if image fails)
-    logo_url = "https://www.quickrelease.co.uk/hubfs/QR_Logo_Red_RGB.png"
-    st.markdown(f"""
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img src="{logo_url}" width="150" onerror="this.style.display='none'">
-            <h2 style="color:{QR_RED}; font-weight:900; margin-top:10px;">QR STRATEGY</h2>
-        </div>
-    """, unsafe_allow_html=True)
+    # Text-based Logo (Replaces broken image)
+    st.markdown(f'<p class="qr-logo">QR<span class="red-underscore">_</span></p>', unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size:0.8rem; color:#666; margin-bottom:20px;'>STRATEGY HUB</p>", unsafe_allow_html=True)
     
     st.write("---")
     
     # Client Data Section
-    st.markdown("### 📂 CLIENT DATA")
+    st.markdown("### 📂 DATA IMPORT")
     uploaded_file = st.file_uploader("Upload CSV/TSV", type=["csv", "tsv"], label_visibility="collapsed")
     
     st.write("---")
     
     # Export Section
-    st.markdown("### 📥 REPORTING")
+    st.markdown("### 📥 EXPORT")
     if "messages" in st.session_state and len(st.session_state.messages) > 0:
-        report_content = f"QUICK RELEASE STRATEGY REPORT\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+        report_content = f"QR_ STRATEGY REPORT\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
         for m in st.session_state.messages:
             report_content += f"[{m['role'].upper()}]: {m['content']}\n\n"
         
-        st.download_button(label="EXPORT SESSION AS .TXT", data=report_content, 
+        st.download_button(label="DOWNLOAD SESSION (.TXT)", data=report_content, 
                            file_name=f"QR_Report_{datetime.now().strftime('%H%M')}.txt")
     else:
         st.caption("No active session to export.")
@@ -162,8 +168,8 @@ with st.sidebar:
         st.rerun()
 
 # --- 4. MAIN INTERFACE ---
-st.markdown(f"<h1><span style='color:{QR_RED};'>QR</span> Account Strategy Assistant</h1>", unsafe_allow_html=True)
-st.markdown('<div class="status-badge">● SENIOR STRATEGY DIRECTOR ACTIVE</div>', unsafe_allow_html=True)
+st.markdown(f'<h1><span style="color:white;">QR</span><span class="red-underscore">_</span> Account Strategy Assistant</h1>', unsafe_allow_html=True)
+st.markdown('<div class="status-badge">SENIOR STRATEGY DIRECTOR ACTIVE</div>', unsafe_allow_html=True)
 
 # Initialize/Display Chat
 if "messages" not in st.session_state:
@@ -174,7 +180,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- 5. AI LOGIC (Locked API Key) ---
-if prompt := st.chat_input("Ask a strategic question..."):
+if prompt := st.chat_input("Enter strategic query..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -190,12 +196,12 @@ if prompt := st.chat_input("Ask a strategic question..."):
             client_data = f"\n\nACTUAL CLIENT DATA:\n{df.to_string()}"
 
         system_prompt = f"""
-        You are the Quick Release Senior Account Strategy Director. 
-        Tone: Senior, Insightful, Direct. Use business terminology.
+        You are the Quick Release (QR_) Senior Account Strategy Director. 
+        Tone: Senior, Analytical, Action-Oriented.
         Reference Structure: {schema_df.to_string()}
         {client_data}
         
-        Always format responses with bold subheaders and bullet points.
+        Use clear headings and bullet points for all strategic advice.
         """
 
         response = model.generate_content(f"{system_prompt}\n\nUser: {prompt}")
