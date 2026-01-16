@@ -1,56 +1,139 @@
 import streamlit as st
-from openai import OpenAI
+import pandas as pd
+import google.generativeai as genai
+from datetime import datetime
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
-)
+# --- 1. BRANDING & COLORS ---
+QR_RED_MAIN = "#AD1212"
+QR_RED_DARK = "#9E0B2E"
+QR_RED_LIGHT = "#D63030"
+QR_WHITE = "#FFFFFF"
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+st.set_page_config(page_title="QR Account Strategy Bot", layout="wide")
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+# Custom CSS for Branding
+st.markdown(f"""
+    <style>
+    .stApp {{ background-color: {QR_WHITE}; }}
+    .stButton>button {{
+        background-color: {QR_RED_MAIN};
+        color: white;
+        border-radius: 5px;
+        border: none;
+    }}
+    .stButton>button:hover {{
+        background-color: {QR_RED_LIGHT};
+        border: none;
+        color: white;
+    }}
+    h1, h2, h3 {{ color: {QR_RED_DARK}; }}
+    .stChatFloatingInputContainer {{ background-color: {QR_WHITE}; }}
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {{
+        background-color: #f8f9fa;
+        border-right: 2px solid {QR_RED_MAIN};
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
+# --- 2. DATA LOADING ---
+@st.cache_data
+def load_structure():
+    try:
+        return pd.read_csv("table.tsv", sep="\t")
+    except:
+        return pd.DataFrame()
+
+schema_df = load_structure()
+
+st.title("🔴 Quick Release Account Strategy Assistant")
+st.subheader("Strategic Planning & Client Insights")
+
+# --- 3. SIDEBAR CONFIG ---
+with st.sidebar:
+    st.image("https://www.quickrelease.co.uk/hubfs/QR_Logo_Red_RGB.png", width=200) # Placeholder for logo
+    st.header("Configuration")
+    google_api_key = st.text_input("Enter Gemini API Key", type="password")
+    
+    available_models = []
+    if google_api_key:
+        try:
+            genai.configure(api_key=google_api_key)
+            models = genai.list_models()
+            available_models = [m.name.replace('models/', '') for m in models if 'generateContent' in m.supported_generation_methods]
+        except: pass
+
+    model_choice = st.selectbox("Select Model", available_models) if available_models else None
+    
+    st.write("---")
+    uploaded_file = st.file_uploader("Upload Client Data (CSV/TSV)", type=["csv", "tsv"])
+    
+    if st.button("🗑️ Clear Chat"):
         st.session_state.messages = []
+        st.rerun()
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# --- 4. CHAT HISTORY ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+# --- 5. STRATEGY LOGIC & CHAT ---
+if prompt := st.chat_input("Ask a strategic question..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
+    if google_api_key and model_choice:
+        try:
+            client_data_context = ""
+            if uploaded_file:
+                df = pd.read_csv(uploaded_file)
+                client_data_context = f"\n\nACTUAL CLIENT DATA:\n{df.to_string()}"
 
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            # STEP 3: IMPROVED STRATEGY PERSONA
+            system_instruction = f"""
+            You are the Quick Release Senior Account Strategy Director. 
+            Your goal is to help Account Managers build world-class account plans.
+            
+            STRUCTURE GUIDELINE:
+            {schema_df.to_string()}
+            
+            {client_data_context}
+            
+            STRATEGIC RULES:
+            1. Always provide actionable advice. Don't just explain 'what' to do, explain 'how' to win.
+            2. If a client has 'Weak' relationship status, suggest specific stakeholder engagement tactics.
+            3. If the user asks for a plan, use the Structure Guideline to ensure all required QR sections are covered.
+            4. Use a professional, high-energy, and insightful tone.
+            """
+            
+            model = genai.GenerativeModel(model_choice)
+            response = model.generate_content(f"{system_instruction}\n\nUser: {prompt}")
+            full_response = response.text
+            
+        except Exception as e:
+            full_response = f"⚠️ Error: {str(e)}"
+    else:
+        full_response = "Please ensure your API Key is entered and a model is selected."
+
+    with st.chat_message("assistant"):
+        st.markdown(full_response)
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+# --- 6. STEP 4: EXPORT FUNCTIONALITY ---
+if st.session_state.messages:
+    st.write("---")
+    # Prepare the chat history for export
+    report_text = f"QUICK RELEASE STRATEGY REPORT\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+    for m in st.session_state.messages:
+        report_text += f"{m['role'].upper()}: {m['content']}\n\n"
+    
+    st.download_button(
+        label="📥 Download Strategy Report (.txt)",
+        data=report_text,
+        file_name=f"QR_Strategy_Report_{datetime.now().strftime('%d_%m_%Y')}.txt",
+        mime="text/plain"
+    )
