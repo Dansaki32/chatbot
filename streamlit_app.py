@@ -204,7 +204,7 @@ def render_zero_state():
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">System Status</div>
-            <div class="metric-value" style="color:#4CAF50;">{status_text}</div>
+            <div class="metric-value" style="color:;">{status_text}</div>
             <div class="metric-desc">All neural modules active.</div>
         </div>
         """, unsafe_allow_html=True)
@@ -213,8 +213,8 @@ def render_zero_state():
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">Data Context</div>
-            <div class="metric-value" style="color#4CAF50:{context_color};">{context_text}</div>
-            <div class="metric-desc">{'Local vectors loaded.' if context_text == 'style="color#4CAF50''READY' else 'Awaiting vector inputs.'}</div>
+            <div class="metric-value" style="color:{context_color};">{context_text}</div>
+            <div class="metric-desc">{'Local vectors loaded.' if context_text == 'READY' else 'Awaiting vector inputs.'}</div>
         </div>
         """, unsafe_allow_html=True)
         
