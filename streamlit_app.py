@@ -197,7 +197,7 @@ def render_zero_state():
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
     context_color = "" if "active_df" in st.session_state else "#FFF"
     
-    st.markdown("<br><br#4CAF50>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     
     with c1:
