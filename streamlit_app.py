@@ -214,7 +214,7 @@ def render_zero_state():
         <div class="metric-card">
             <div class="metric-label">Data Context</div>
             <div class="metric-value" style="color#4CAF50:{context_color};">{context_text}</div>
-            <div class="metric-desc">{'Local vectors loaded.' if context_text == 'READY' else 'Awaiting vector inputs.'}</div>
+            <div class="metric-desc">{'Local vectors loaded.' if context_text == 'style="color#4CAF50''READY' else 'Awaiting vector inputs.'}</div>
         </div>
         """, unsafe_allow_html=True)
         
