@@ -88,9 +88,9 @@ def inject_custom_css():
         [data-testid="stFileUploader"] section {
             background-color: #111111 !important;
         }
-        /* Target the dropzone text */
+        /* Target the dropzone text - Force White/Light Grey */
         [data-testid="stFileUploader"] div {
-            color: #888 !important;
+            color: #E0E0E0 !important; /* Made brighter for visibility */
             font-family: var(--font-body);
         }
         [data-testid="stFileUploader"] button { 
@@ -149,15 +149,32 @@ def inject_custom_css():
             margin-top: 5px;
         }
 
-        /* 7. CHAT INPUT */
-        .stChatInput textarea { 
-            background-color: #111 !important; 
-            color: #fff !important; 
-            border: 1px solid #333 !important; 
+        /* 7. CHAT INPUT FIX - FORCE DARK BACKGROUND */
+        /* This targets the container */
+        div[data-testid="stChatInput"] {
+            background-color: transparent !important;
+        }
+        
+        /* This targets the actual typing area */
+        div[data-testid="stChatInput"] textarea { 
+            background-color: #333333 !important; /* Dark Grey Background */
+            color: #FFFFFF !important;            /* White Text */
+            caret-color: #D31515 !important;      /* Red Cursor */
+            border: 1px solid #555 !important; 
             font-family: var(--font-body) !important;
         }
-        .stChatInput textarea:focus {
+        
+        /* Focus state */
+        div[data-testid="stChatInput"] textarea:focus {
             border-color: var(--accent-red) !important;
+            background-color: #333333 !important; /* Ensure it stays dark on focus */
+            color: #FFFFFF !important;
+            box-shadow: 0 0 0 1px var(--accent-red) !important;
+        }
+        
+        /* Placeholder Text */
+        div[data-testid="stChatInput"] textarea::placeholder {
+            color: #888888 !important;
         }
 
         /* 8. PULSING ANIMATION FOR "ACTIVE SESSION" */
@@ -283,7 +300,7 @@ def render_sidebar(data_engine, ai_engine):
         # Updated Subtitle
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v3.8
+                Accounts OS v3.9
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
