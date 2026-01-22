@@ -298,7 +298,7 @@ def render_sidebar(data_engine, ai_engine):
         
         # Controls Section
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#000000; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 02 // SYSTEM CONTROLS
             </div>
         """, unsafe_allow_html=True)
