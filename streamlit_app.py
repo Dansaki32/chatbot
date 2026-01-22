@@ -9,13 +9,13 @@ from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(
-    page_title="QR_ STRATEGY OS",
+    page_title="QR_ ACCOUNTS OS",
     page_icon="🔴",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. VISUAL CORE (Updated for Red Buttons) ---
+# --- 2. VISUAL CORE (CSS) ---
 def inject_custom_css():
     st.markdown("""
     <style>
@@ -27,6 +27,7 @@ def inject_custom_css():
             --text-white: #FFFFFF;
             --text-gray: #CCCCCC;
             --highlight-red: #D31515;
+            --highlight-green: #4CAF50; /* Green for status */
             --input-bg: #333333;
         }
 
@@ -42,7 +43,7 @@ def inject_custom_css():
 
         /* SIDEBAR BUTTONS - FORCE RED TEXT */
         [data-testid="stSidebar"] .stButton button {
-            color: var(--highlight-red) !important; /* <--- THIS MAKES THE FONT RED */
+            color: var(--highlight-red) !important;
             border-color: #333 !important;
             background-color: transparent !important;
             font-weight: bold !important;
@@ -139,7 +140,7 @@ class AIEngine:
             return
 
         system_prompt = f"""
-        ROLE: You are QR_OS, an elite Strategy Operating System.
+        ROLE: You are QR_ ACCOUNTS OS, an elite Account Strategy Operating System.
         TONE: Professional, concise, data-driven.
         CONTEXT: The user has access to the following secure databases:
         {db_context}
@@ -160,7 +161,7 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("""
             <div style='margin-bottom: 20px;'>
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
-                <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top:5px;'>STRATEGY OS v3.2</div>
+                <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top:5px;'>ACCOUNTS OS v3.3</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -186,7 +187,7 @@ def render_sidebar(data_engine, ai_engine):
         
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
         
-        # --- FIXED BUTTON ---
+        # --- FIXED BUTTON: No HTML inside string, colored via CSS ---
         if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
@@ -195,7 +196,8 @@ def render_zero_state():
     # Check if we have data to determine status
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
-    context_color = "" if "active_df" in st.session_state else "#FFF"
+    # Use Green (#4CAF50) for all main states as requested
+    status_color = "#4CAF50"
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
@@ -204,7 +206,7 @@ def render_zero_state():
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">System Status</div>
-            <div class="metric-value" style="color:;">{status_text}</div>
+            <div class="metric-value" style="color:{status_color};">ONLINE</div>
             <div class="metric-desc">All neural modules active.</div>
         </div>
         """, unsafe_allow_html=True)
@@ -213,16 +215,16 @@ def render_zero_state():
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">Data Context</div>
-            <div class="metric-value" style="color:{context_color};">{context_text}</div>
+            <div class="metric-value" style="color:{status_color};">{context_text}</div>
             <div class="metric-desc">{'Local vectors loaded.' if context_text == 'READY' else 'Awaiting vector inputs.'}</div>
         </div>
         """, unsafe_allow_html=True)
         
     with c3:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">Personality type</div>
-            <div class="metric-value" style="color:#4CAF50;">Senior Director</div>
+            <div class="metric-label">Personality Type</div>
+            <div class="metric-value" style="color:{status_color};">SENIOR DIRECTOR</div>
             <div class="metric-desc">Active.</div>
         </div>
         """, unsafe_allow_html=True)
@@ -257,7 +259,8 @@ def main():
 
     render_sidebar(data_engine, ai_engine)
 
-    tab1, tab2 = st.tabs(["// STRATEGY_CHAT", "// DATA_RECON"])
+    # UPDATED TABS: ACCOUNTS_CHAT
+    tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
 
     with tab1:
         st.markdown("""
