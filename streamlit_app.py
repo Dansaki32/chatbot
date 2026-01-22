@@ -19,7 +19,7 @@ st.set_page_config(
 def inject_custom_css():
     st.markdown("""
     <style>
-        /* 1. LOAD ROBOTO FROM GOOGLE FONTS */
+        /* 1. LOAD ROBOTO FROM GOOGLE (Body Text) */
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400&display=swap');
 
         /* 2. LOAD LOCAL CUSTOM FONTS (DOLCE VITA) */
@@ -27,151 +27,136 @@ def inject_custom_css():
             font-family: 'Dolce Vita';
             src: url('Dolce Vita.ttf') format('truetype');
             font-weight: normal;
-            font-style: normal;
         }
         @font-face {
             font-family: 'Dolce Vita Light';
             src: url('Dolce Vita Light.ttf') format('truetype');
             font-weight: 300;
-            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Dolce Vita Bold';
+            src: url('Dolce Vita Heavy Bold.ttf') format('truetype');
+            font-weight: bold;
         }
 
         /* 3. ROOT VARIABLES */
         :root {
-            --bg-color: #262626;
-            --accent-black: #000000;
+            --bg-color: #1a1a1a;
+            --sidebar-bg: #000000;
+            --accent-red: #D31515;
+            --accent-green: #4CAF50;
             --text-white: #FFFFFF;
-            --text-gray: #CCCCCC;
-            --highlight-red: #D31515;
-            --highlight-green: #4CAF50;
-            --input-bg: #333333;
+            --text-gray: #B0B0B0;
             
-            /* Define Fonts */
-            --font-main: 'Roboto', sans-serif;
-            --font-header: 'Dolce Vita', 'Roboto', sans-serif;
+            /* Font Mappings */
+            --font-display: 'Dolce Vita Bold', 'Roboto', sans-serif;
+            --font-subdisplay: 'Dolce Vita', 'Roboto', sans-serif;
+            --font-body: 'Roboto', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
 
         /* 4. GLOBAL RESETS */
         .stApp { 
             background-color: var(--bg-color); 
-            color: var(--text-white); 
-            font-family: var(--font-main); 
+            font-family: var(--font-body);
         }
         
-        /* APPLY DOLCE VITA TO HEADINGS */
-        h1, h2, h3, h4, h5, h6 { 
-            color: var(--text-white) !important;
-            font-family: var(--font-header) !important; 
-            letter-spacing: 1px; 
-            font-weight: normal;
+        h1, h2, h3 { 
+            font-family: var(--font-display) !important; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
         
-        /* General Text */
-        p, div, span, button, input { 
-            font-family: var(--font-main); 
-            color: var(--text-white); 
+        p, div, span, li { 
+            font-family: var(--font-body); 
+            color: var(--text-white);
         }
 
-        /* SIDEBAR STYLING */
+        /* 5. SIDEBAR POLISH */
         [data-testid="stSidebar"] { 
-            background-color: var(--accent-black); 
-            border-right: 1px solid #111; 
-        }
-        section[data-testid="stSidebar"] > div > div:first-child {
-            padding-top: 20px;
+            background-color: var(--sidebar-bg); 
+            border-right: 1px solid #333; 
         }
 
-        /* FILE UPLOADER */
-        [data-testid="stFileUploader"] { 
-            padding: 1rem; 
-            background: var(--accent-black); 
-            border: 1px solid #444; 
-            border-radius: 0px; 
+        /* FILE UPLOADER - DARK MODE FIX */
+        [data-testid="stFileUploader"] {
+            background-color: #111111;
+            border: 1px dashed #444;
+            padding: 15px;
+            border-radius: 5px;
         }
-        [data-testid="stFileUploader"] div { color: var(--text-gray) !important; font-family: var(--font-main); }
+        [data-testid="stFileUploader"] section {
+            background-color: #111111 !important;
+        }
+        /* Target the dropzone text */
+        [data-testid="stFileUploader"] div {
+            color: #888 !important;
+            font-family: var(--font-body);
+        }
         [data-testid="stFileUploader"] button { 
-            background-color: var(--highlight-red) !important; 
+            background-color: var(--accent-red) !important; 
             color: white !important; 
             border: none; 
-            font-weight: bold;
-            font-family: var(--font-header);
+            font-family: var(--font-display);
+            letter-spacing: 1px;
         }
 
-        /* SIDEBAR BUTTONS */
-        [data-testid="stSidebar"] .stButton button {
-            color: var(--highlight-red) !important;
-            border-color: #333 !important;
-            background-color: transparent !important;
-            font-weight: bold !important;
-            font-family: var(--font-header) !important;
-            letter-spacing: 1px;
+        /* 6. METRIC CARDS */
+        .metric-card { 
+            background: #000000; 
+            border: 1px solid #222; 
+            padding: 25px; 
+            border-radius: 4px; 
+            height: 100%; 
             transition: all 0.3s ease;
         }
-        [data-testid="stSidebar"] .stButton button:hover {
-            border-color: var(--highlight-red) !important;
-            box-shadow: 0 0 10px rgba(211, 21, 21, 0.2);
-        }
-
-        /* CHAT INPUT */
-        .stChatInput { background: transparent; padding-bottom: 2rem; }
-        .stChatInput textarea { 
-            background-color: var(--input-bg) !important; 
-            color: #FFFFFF !important; 
-            border: 1px solid #555 !important; 
-            border-radius: 4px !important; 
-            font-family: var(--font-main) !important; 
-        }
-        .stChatInput textarea:focus { 
-            border-color: var(--highlight-red) !important; 
-            box-shadow: 0 0 0 1px var(--highlight-red) !important; 
-        }
-        
-        /* CHAT MESSAGES */
-        [data-testid="stChatMessage"] { background-color: transparent; border-bottom: 1px solid #333; }
-        [data-testid="stChatMessage"] .st-emotion-cache-1p1m4ay { background-color: var(--highlight-red); }
-
-        /* CARDS */
-        .metric-card { 
-            background: var(--accent-black); 
-            border: 1px solid #333; 
-            padding: 20px; 
-            border-radius: 0px; 
-            height: 100%; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-        }
-        .metric-value { 
-            font-family: var(--font-header);
-            font-size: 2rem; 
-            font-weight: normal; 
-            color: var(--text-white); 
+        .metric-card:hover {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(211, 21, 21, 0.1);
         }
         .metric-label { 
-            font-family: var(--font-main);
-            font-size: 0.85rem; 
+            font-family: var(--font-subdisplay);
+            font-size: 0.8rem; 
             color: var(--text-gray); 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            margin-bottom: 5px; 
-            font-weight: 600; 
+            letter-spacing: 2px; 
+            margin-bottom: 8px; 
+        }
+        .metric-value { 
+            font-family: var(--font-display);
+            font-size: 2.2rem; 
+            color: var(--text-white); 
         }
         .metric-desc { 
-            font-family: var(--font-main);
+            font-family: var(--font-body);
             font-size: 0.8rem; 
-            color: #888; 
+            color: #666; 
+            margin-top: 5px;
         }
 
-        /* TABS */
-        button[data-baseweb="tab"] { 
-            background-color: transparent !important; 
-            color: var(--text-gray) !important; 
-            font-family: var(--font-header) !important;
+        /* 7. CHAT INPUT */
+        .stChatInput textarea { 
+            background-color: #111 !important; 
+            color: #fff !important; 
+            border: 1px solid #333 !important; 
+            font-family: var(--font-body) !important;
         }
-        button[data-baseweb="tab"][aria-selected="true"] { 
-            color: var(--text-white) !important; 
-            border-bottom-color: var(--highlight-red) !important; 
+        .stChatInput textarea:focus {
+            border-color: var(--accent-red) !important;
         }
 
+        /* 8. PULSING ANIMATION FOR "ACTIVE SESSION" */
+        @keyframes pulse-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .active-session-text {
+            color: var(--accent-red);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            animation: pulse-red 2s infinite;
+        }
+        
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
@@ -258,15 +243,14 @@ class AIEngine:
 
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # --- LOGO SECTION (LOOKING FOR logo.png) ---
+        # --- LOGO & HEADER ---
         script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Priority search
+        # Priority search for logo
         possible_paths = [
-            os.path.join(script_dir, "logo.png"),              # Priority 1: Main folder
-            os.path.join(script_dir, "assets", "logo.png"),    # Priority 2: Assets
-            os.path.join(script_dir, "assessts", "logo.png"),  # Priority 3: Typos
-            "logo.png"                                         # Fallback
+            os.path.join(script_dir, "logo.png"),              
+            os.path.join(script_dir, "assets", "logo.png"),    
+            "logo.png"                                         
         ]
         
         logo_path = None
@@ -278,18 +262,23 @@ def render_sidebar(data_engine, ai_engine):
         if logo_path:
             st.image(logo_path, use_container_width=True)
         else:
-            # Fallback Text
-            st.markdown("""
-                <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
-            """, unsafe_allow_html=True)
+            st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
+        # Updated Subtitle with Dolce Vita Light
         st.markdown("""
-            <div style='font-family: "Dolce Vita", sans-serif; font-size: 0.8rem; color: #CCCCCC; letter-spacing: 2px; margin-top: 10px; margin-bottom: 20px;'>ACCOUNTS OS v3.8</div>
-            <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
+            <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
+                Accounts OS v3.8
+            </div>
+            <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
 
-        # Upload
-        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px; font-family: Roboto;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
+        # Upload Section
+        st.markdown("""
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+                01 // DATA INGESTION
+            </div>
+        """, unsafe_allow_html=True)
+        
         uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv'], label_visibility="collapsed")
         
         if uploaded_file:
@@ -307,16 +296,25 @@ def render_sidebar(data_engine, ai_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Controls
-        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px; font-family: Roboto;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
+        # Controls Section
+        st.markdown("""
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+                02 // SYSTEM CONTROLS
+            </div>
+        """, unsafe_allow_html=True)
+        
         if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
 
 def render_zero_state():
+    # Dynamic Status
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
-    status_color = "#4CAF50"
+    
+    # Colors
+    green = "#4CAF50"
+    red = "#D31515"
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
@@ -325,16 +323,18 @@ def render_zero_state():
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">System Status</div>
-            <div class="metric-value" style="color:{status_color};">ONLINE</div>
+            <div class="metric-value" style="color:{green};">{status_text}</div>
             <div class="metric-desc">All neural modules active.</div>
         </div>
         """, unsafe_allow_html=True)
         
     with c2:
+        # Context is green if ready, red if waiting
+        ctx_color = green if context_text == "READY" else red
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">Data Context</div>
-            <div class="metric-value" style="color:{status_color};">{context_text}</div>
+            <div class="metric-value" style="color:{ctx_color};">{context_text}</div>
             <div class="metric-desc">{'Local vectors loaded.' if context_text == 'READY' else 'Awaiting vector inputs.'}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -343,12 +343,12 @@ def render_zero_state():
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">Personality Type</div>
-            <div class="metric-value" style="color:{status_color};">SENIOR DIRECTOR</div>
-            <div class="metric-desc">Active.</div>
+            <div class="metric-value" style="color:{green};">SENIOR DIRECTOR</div>
+            <div class="metric-desc">Active Strategy Mode.</div>
         </div>
         """, unsafe_allow_html=True)
         
-    st.markdown("<br><br><div style='text-align:center; color:#CCC; font-family:JetBrains Mono;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
+    st.markdown("<br><br><div style='text-align:center; color:#555; font-family:JetBrains Mono; font-size: 0.8rem;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
 
 # --- 5. MAIN EXECUTION ---
 
@@ -361,7 +361,7 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Auto-Load
+    # Auto-Load Logic
     if "local_loaded" not in st.session_state:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         local_file = os.path.join(script_dir, "table.tsv")
@@ -383,12 +383,13 @@ def main():
     tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
 
     with tab1:
+        # Header with pulsing active session
         st.markdown("""
             <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
                 <div>
-                    <span style='color:#D31515; font-weight:bold; font-family: "Dolce Vita", sans-serif;'>// ACTIVE SESSION</span>
+                    <span class='active-session-text'>// ACTIVE SESSION</span>
                 </div>
-                <div style='font-family:JetBrains Mono; font-size:0.8rem; color:#CCC;'>
+                <div style='font-family: "JetBrains Mono"; font-size:0.7rem; color:#555;'>
                     {timestamp}
                 </div>
             </div>
@@ -435,7 +436,12 @@ def main():
                 c1, c2 = st.columns(2)
                 with c1:
                     fig = px.bar(df, x=df.columns[0], y=num_cols[0], template="plotly_dark")
-                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#E0E0E0")
+                    fig.update_layout(
+                        paper_bgcolor="#1a1a1a", 
+                        plot_bgcolor="#1a1a1a", 
+                        font_color="#E0E0E0",
+                        font_family="Roboto"
+                    )
                     fig.update_traces(marker_color='#D31515')
                     st.plotly_chart(fig, use_container_width=True)
                 with c2:
