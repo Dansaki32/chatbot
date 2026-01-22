@@ -56,19 +56,22 @@ def inject_custom_css():
         [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
-        /* BUTTON STYLING - GLOBAL */
-        div.stButton > button { 
+        /* --- MICRO BUTTONS FOR SIDEBAR --- */
+        [data-testid="stSidebar"] div.stButton button { 
             background-color: #000000 !important; 
             color: var(--accent-red) !important; 
             border: 1px solid var(--accent-red) !important; 
             font-family: var(--font-display) !important; 
+            font-size: 0.6rem !important; /* Tiny Text */
+            padding: 0px !important;      /* No Padding */
+            min-height: 22px !important;  /* Force Short Height */
+            height: 22px !important;
+            line-height: 22px !important;
             text-transform: uppercase; 
-            transition: all 0.2s ease;
-            font-size: 0.75rem !important;
-            padding: 0.25rem 0.5rem !important;
+            margin-top: 2px !important;
         }
-        div.stButton > button:hover { 
-            box-shadow: 0 0 10px rgba(211, 21, 21, 0.4); 
+        [data-testid="stSidebar"] div.stButton button:hover { 
+            box-shadow: 0 0 5px rgba(211, 21, 21, 0.4); 
             color: white !important; 
             background-color: var(--accent-red) !important; 
         }
@@ -218,7 +221,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.4</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.5</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -254,18 +257,18 @@ def render_sidebar(knowledge_engine):
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Control Buttons Row (3 Buttons)
+                # Control Buttons Row (3 Tiny Buttons - NO use_container_width)
                 c1, c2, c3 = st.columns([1, 1, 1])
                 with c1:
-                    if st.button("ON", key=f"on_{f}", use_container_width=True):
+                    if st.button("ON", key=f"on_{f}"):
                         set_file_status(f, True)
                         st.rerun()
                 with c2:
-                    if st.button("OFF", key=f"off_{f}", use_container_width=True):
+                    if st.button("OFF", key=f"off_{f}"):
                         set_file_status(f, False)
                         st.rerun()
                 with c3:
-                    if st.button("X", key=f"del_{f}", use_container_width=True):
+                    if st.button("X", key=f"del_{f}"):
                         delete_file(f)
                         st.rerun()
                 
