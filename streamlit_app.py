@@ -56,24 +56,16 @@ def inject_custom_css():
         [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
-        /* --- MICRO BUTTONS FOR SIDEBAR --- */
-        [data-testid="stSidebar"] div.stButton button { 
-            background-color: #000000 !important; 
-            color: var(--accent-red) !important; 
-            border: 1px solid var(--accent-red) !important; 
-            font-family: var(--font-display) !important; 
-            font-size: 0.6rem !important; /* Tiny Text */
-            padding: 0px !important;      /* No Padding */
-            min-height: 22px !important;  /* Force Short Height */
-            height: 22px !important;
-            line-height: 22px !important;
-            text-transform: uppercase; 
-            margin-top: 2px !important;
-        }
-        [data-testid="stSidebar"] div.stButton button:hover { 
-            box-shadow: 0 0 5px rgba(211, 21, 21, 0.4); 
-            color: white !important; 
-            background-color: var(--accent-red) !important; 
+        /* --- MICRO BUTTONS FOR SIDEBAR FILES --- */
+        /* Target the small columns in sidebar specifically */
+        [data-testid="stSidebar"] div[data-testid="column"] button {
+            font-size: 0.6rem !important;
+            padding: 0px 5px !important;
+            min-height: 20px !important;
+            height: 24px !important;
+            line-height: 1 !important;
+            margin-top: 0px !important;
+            width: 100%;
         }
 
         /* METRIC CARDS */
@@ -221,7 +213,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.5</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.6</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -247,58 +239,64 @@ def render_sidebar(knowledge_engine):
         if files:
             for f in files:
                 is_active = meta.get(f, True)
-                status_color = "#4CAF50" if is_active else "#666"
-                status_text = "ACTIVE" if is_active else "MUTED"
                 
-                # File Name Row
+                # VISUAL FEEDBACK ON FILENAME
+                name_color = "#4CAF50" if is_active else "#666"
+                status_icon = "🟢" if is_active else "⚫"
                 st.markdown(f"""
-                <div style="font-size:0.75rem; color:#DDD; margin-bottom:2px; border-left: 2px solid {status_color}; padding-left: 8px;">
-                    {f} <span style="color:{status_color}; font-size:0.6rem; opacity:0.8;">[{status_text}]</span>
+                <div style="font-size:0.75rem; color:{name_color}; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    {status_icon} {f}
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Control Buttons Row (3 Tiny Buttons - NO use_container_width)
-                c1, c2, c3 = st.columns([1, 1, 1])
+                # CONTROL BUTTONS
+                # We use 'primary' type for the active state to make it filled/bright
+                c1, c2, c3 = st.columns([1, 1, 1.2])
+                
                 with c1:
-                    if st.button("ON", key=f"on_{f}"):
+                    # ON Button (Red if active, grey if not)
+                    if st.button("ON", key=f"on_{f}", type="primary" if is_active else "secondary"):
                         set_file_status(f, True)
                         st.rerun()
                 with c2:
-                    if st.button("OFF", key=f"off_{f}"):
+                    # OFF Button (Red if inactive, grey if active)
+                    if st.button("OFF", key=f"off_{f}", type="primary" if not is_active else "secondary"):
                         set_file_status(f, False)
                         st.rerun()
                 with c3:
-                    if st.button("X", key=f"del_{f}"):
+                    # REMOVE Button (Always secondary/grey until hovered)
+                    if st.button("REMOVE", key=f"del_{f}", type="secondary"):
                         delete_file(f)
                         st.rerun()
                 
-                st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True) # Spacer
+                st.markdown("<div style='margin-bottom:10px; border-bottom:1px solid #222;'></div>", unsafe_allow_html=True)
         else:
             st.markdown("<div style='color:#444; font-size:0.8rem; font-style:italic;'>Memory Empty</div>", unsafe_allow_html=True)
 
         # WIPE MEMORY
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
         if "wipe_confirm" not in st.session_state: st.session_state.wipe_confirm = False
         
         if not st.session_state.wipe_confirm:
-            if st.button("WIPE MEMORY", use_container_width=True):
+            # WIDE button for WIPE
+            if st.button("WIPE MEMORY"):
                 st.session_state.wipe_confirm = True
                 st.rerun()
         else:
-            st.markdown("<div style='color:#D31515; font-size:0.8rem; text-align:center; margin-bottom:5px;'>⚠️ DELETE ALL DATA?</div>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#D31515; font-size:0.8rem; text-align:center; margin-bottom:5px;'>⚠️ CONFIRM WIPE?</div>", unsafe_allow_html=True)
             c_yes, c_no = st.columns(2)
             with c_yes:
-                if st.button("CONFIRM", use_container_width=True):
+                if st.button("YES", type="primary"):
                     for f in os.listdir(STORAGE_DIR): os.remove(os.path.join(STORAGE_DIR, f))
                     st.session_state.wipe_confirm = False
                     st.rerun()
             with c_no:
-                if st.button("CANCEL", use_container_width=True):
+                if st.button("NO", type="secondary"):
                     st.session_state.wipe_confirm = False
                     st.rerun()
         
         st.markdown("<div style='margin-bottom:5px;'></div>", unsafe_allow_html=True)
-        if st.button("CLEAR SESSION CACHE", use_container_width=True):
+        if st.button("CLEAR CHAT"):
             st.session_state.messages = []
             st.rerun()
 
