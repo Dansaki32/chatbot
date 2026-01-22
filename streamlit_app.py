@@ -51,53 +51,47 @@ def inject_custom_css():
         section[data-testid="stSidebar"] > div { padding-top: 0rem !important; }
         [data-testid="stSidebar"] img { margin-top: -50px !important; margin-bottom: 20px !important; }
 
-        /* FILE CONTROLS */
-        .file-row { 
-            display: flex; align-items: center; justify-content: space-between; 
-            background: #111; border: 1px solid #333; padding: 5px 10px; margin-bottom: 5px; 
-        }
-        .file-name { font-size: 0.75rem; color: #ccc; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 120px; }
-        
-        /* TINY BUTTONS FOR X */
-        button[kind="secondary"] {
-            padding: 0px 8px !important;
-            border: 1px solid #333 !important;
-            color: #666 !important;
-            font-size: 0.7rem !important;
-            line-height: 1 !important;
-            min-height: 0px !important;
-            height: 25px !important;
-        }
-        button[kind="secondary"]:hover {
-            border-color: #D31515 !important;
-            color: #D31515 !important;
-        }
-
-        /* UPLOADER & BUTTONS */
+        /* FILE UPLOADER */
         [data-testid="stFileUploader"] { background-color: #0A0A0A; border: 1px solid #333; padding: 15px; }
-        div.stButton > button { 
-            background-color: #000000 !important; color: var(--accent-red) !important; 
-            border: 1px solid var(--accent-red) !important; font-family: var(--font-display) !important; 
-            text-transform: uppercase; width: 100%; transition: all 0.2s ease;
-        }
-        div.stButton > button:hover { box-shadow: 0 0 15px rgba(211, 21, 21, 0.4); color: white !important; background-color: var(--accent-red) !important; }
+        [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
+        [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
-        /* METRIC CARDS & INPUTS */
+        /* BUTTON STYLING - GLOBAL */
+        div.stButton > button { 
+            background-color: #000000 !important; 
+            color: var(--accent-red) !important; 
+            border: 1px solid var(--accent-red) !important; 
+            font-family: var(--font-display) !important; 
+            text-transform: uppercase; 
+            transition: all 0.2s ease;
+            font-size: 0.75rem !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        div.stButton > button:hover { 
+            box-shadow: 0 0 10px rgba(211, 21, 21, 0.4); 
+            color: white !important; 
+            background-color: var(--accent-red) !important; 
+        }
+
+        /* METRIC CARDS */
         .metric-card { background: #000000; border: 1px solid #333; padding: 20px; height: 100%; margin-bottom: 20px; }
         .metric-label { font-family: var(--font-body); font-size: 0.75rem; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
         .metric-value { font-family: var(--font-display); font-size: 1.5rem; color: white; letter-spacing: 1px; }
-        
+
+        /* CHAT INPUT */
         div[data-testid="stChatInput"] { background-color: var(--bg-color) !important; padding-bottom: 1.5rem !important; }
         div[data-testid="stChatInput"] textarea { background-color: #0A0A0A !important; color: white !important; border: 1px solid #333 !important; }
         div[data-testid="stChatInput"] textarea:focus { border-color: var(--accent-red) !important; box-shadow: 0 0 10px rgba(211, 21, 21, 0.2) !important; }
-        
+
+        /* TABS */
         button[data-baseweb="tab"] { font-family: var(--font-display) !important; letter-spacing: 1px; }
+        
         .active-session-text { color: var(--accent-red); font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 1px; animation: pulse-red 2s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. BACKEND LOGIC (PERSISTENT KNOWLEDGE BASE + METADATA) ---
+# --- 3. BACKEND LOGIC ---
 
 STORAGE_DIR = "knowledge_base"
 METADATA_FILE = os.path.join(STORAGE_DIR, "metadata.json")
@@ -106,33 +100,26 @@ def init_storage():
     if not os.path.exists(STORAGE_DIR):
         os.makedirs(STORAGE_DIR)
     if not os.path.exists(METADATA_FILE):
-        with open(METADATA_FILE, 'w') as f:
-            json.dump({}, f)
+        with open(METADATA_FILE, 'w') as f: json.dump({}, f)
 
 def load_metadata():
     if os.path.exists(METADATA_FILE):
-        with open(METADATA_FILE, 'r') as f:
-            return json.load(f)
+        with open(METADATA_FILE, 'r') as f: return json.load(f)
     return {}
 
 def save_metadata(data):
-    with open(METADATA_FILE, 'w') as f:
-        json.dump(data, f)
+    with open(METADATA_FILE, 'w') as f: json.dump(data, f)
 
 def save_uploaded_file(uploaded_file):
     try:
         file_path = os.path.join(STORAGE_DIR, uploaded_file.name)
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
-        
-        # Set default status to True (Active) on upload
         meta = load_metadata()
-        meta[uploaded_file.name] = True 
+        meta[uploaded_file.name] = True # Default to Active
         save_metadata(meta)
-        
         return file_path
-    except Exception as e:
-        return None
+    except Exception as e: return None
 
 def delete_file(filename):
     try:
@@ -142,25 +129,26 @@ def delete_file(filename):
             del meta[filename]
             save_metadata(meta)
         return True
-    except:
-        return False
+    except: return False
+
+def set_file_status(filename, status):
+    meta = load_metadata()
+    meta[filename] = status
+    save_metadata(meta)
 
 class KnowledgeEngine:
     def get_all_context(self):
         context = ""
         meta = load_metadata()
-        
         if not os.path.exists(STORAGE_DIR): return "NO DATA."
-        
         files = [f for f in os.listdir(STORAGE_DIR) if os.path.isfile(os.path.join(STORAGE_DIR, f)) and f != "metadata.json"]
         
-        if not files: return "NO KNOWLEDGE BASE FILES FOUND. PLEASE UPLOAD DATA."
+        # Filter Active
+        active_files = [f for f in files if meta.get(f, True)]
         
-        # Filter only Active files
-        active_files = [f for f in files if meta.get(f, True)] # Default to True if missing from meta
+        if not active_files: return "NO ACTIVE DATA. PLEASE UPLOAD OR ACTIVATE FILES."
         
         context += f"/// SYSTEM KNOWLEDGE BASE ({len(active_files)} ACTIVE FILES) ///\n\n"
-        
         for filename in active_files:
             file_path = os.path.join(STORAGE_DIR, filename)
             context += f"=== SOURCE FILE: {filename} ===\n"
@@ -175,8 +163,7 @@ class KnowledgeEngine:
                     sep = '\t' if filename.endswith('.tsv') else ','
                     df = pd.read_csv(file_path, sep=sep)
                     context += df.to_string(index=False) + "\n\n"
-            except Exception as e:
-                context += f"[ERROR READING FILE: {str(e)}]\n\n"
+            except Exception as e: context += f"[ERROR READING FILE: {str(e)}]\n\n"
         return context
 
 class AIEngine:
@@ -190,31 +177,34 @@ class AIEngine:
 
     def stream_response(self, user_query, db_context):
         if not self.active: yield "SYSTEM ERROR: API KEY MISSING."; return
-        
         system_prompt = f"""
         ROLE: You are QR_ ACCOUNTS OS, an elite Strategy Operating System.
-        TASK: Answer queries based STRICTLY on the knowledge base provided below.
-        If the knowledge base is empty, state that no data is active.
+        TASK: Answer based STRICTLY on the knowledge base.
         [KNOWLEDGE BASE]
         {db_context}
         """
         try:
             response = self.model.generate_content(f"{system_prompt}\n\nUSER QUERY: {user_query}", stream=True)
             for chunk in response: yield chunk.text
-        except Exception as e: yield f"API ERROR: {str(e)}"
+        except Exception as e: 
+            if "429" in str(e): yield "⚠️ SYSTEM OVERLOAD (429): API Rate limit exceeded. Please wait a moment."
+            else: yield f"API ERROR: {str(e)}"
 
     def generate_one_pager(self, db_context):
         if not self.active: return "SYSTEM ERROR: API KEY MISSING."
         prompt = f"""
-        ROLE: Senior Strategy Director.
-        TASK: Create a consolidated "Executive 1-Pager" based on ALL the data provided below.
-        [DATA SOURCE]
+        ROLE: Strategy Director.
+        TASK: Consolidated Executive 1-Pager based on ALL data below.
+        FORMAT: 1. Summary, 2. Risks, 3. Opportunities, 4. Metrics, 5. Action Plan.
+        [DATA]
         {db_context}
         """
         try:
             response = self.model.generate_content(prompt)
             return response.text
-        except Exception as e: return f"GENERATION ERROR: {str(e)}"
+        except Exception as e:
+            if "429" in str(e): return "⚠️ SYSTEM OVERLOAD (429): API Rate limit exceeded. Please wait a moment."
+            return f"GENERATION ERROR: {str(e)}"
 
 # --- 4. FRONTEND COMPONENTS ---
 
@@ -228,23 +218,19 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.3</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.4</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
         # UPLOAD
         st.markdown("<div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:5px;'>INGEST KNOWLEDGE</div>", unsafe_allow_html=True)
-        
         if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
-        uploaded_file = st.file_uploader(
-            "Upload", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed",
-            key=f"uploader_{st.session_state.uploader_key}"
-        )
+        uploaded_file = st.file_uploader("Upload", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed", key=f"uploader_{st.session_state.uploader_key}")
         
         if uploaded_file:
             save_path = save_uploaded_file(uploaded_file)
             if save_path:
-                st.toast(f"SAVED TO CORE: {uploaded_file.name}", icon="💾")
+                st.toast(f"SAVED: {uploaded_file.name}", icon="💾")
                 st.session_state.uploader_key += 1
                 time.sleep(1)
                 st.rerun()
@@ -257,56 +243,63 @@ def render_sidebar(knowledge_engine):
         
         if files:
             for f in files:
-                # Get current status (default True)
                 is_active = meta.get(f, True)
+                status_color = "#4CAF50" if is_active else "#666"
+                status_text = "ACTIVE" if is_active else "MUTED"
                 
-                # Layout: [Toggle] [Filename] [Delete]
-                c1, c2, c3 = st.columns([1, 4, 1])
+                # File Name Row
+                st.markdown(f"""
+                <div style="font-size:0.75rem; color:#DDD; margin-bottom:2px; border-left: 2px solid {status_color}; padding-left: 8px;">
+                    {f} <span style="color:{status_color}; font-size:0.6rem; opacity:0.8;">[{status_text}]</span>
+                </div>
+                """, unsafe_allow_html=True)
                 
+                # Control Buttons Row (3 Buttons)
+                c1, c2, c3 = st.columns([1, 1, 1])
                 with c1:
-                    # Toggle Button Logic
-                    toggle_label = "🟢" if is_active else "⚫"
-                    if st.button(toggle_label, key=f"toggle_{f}", help="Toggle Active Status"):
-                        meta[f] = not is_active
-                        save_metadata(meta)
+                    if st.button("ON", key=f"on_{f}", use_container_width=True):
+                        set_file_status(f, True)
                         st.rerun()
-                        
                 with c2:
-                    color = "#FFF" if is_active else "#666"
-                    st.markdown(f"<div style='color:{color}; font-size:0.75rem; white-space:nowrap; overflow:hidden; padding-top:5px;'>{f}</div>", unsafe_allow_html=True)
-                
+                    if st.button("OFF", key=f"off_{f}", use_container_width=True):
+                        set_file_status(f, False)
+                        st.rerun()
                 with c3:
-                    if st.button("✕", key=f"del_{f}", help="Delete File", type="secondary"):
+                    if st.button("X", key=f"del_{f}", use_container_width=True):
                         delete_file(f)
                         st.rerun()
+                
+                st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True) # Spacer
         else:
             st.markdown("<div style='color:#444; font-size:0.8rem; font-style:italic;'>Memory Empty</div>", unsafe_allow_html=True)
 
-        # WIPE MEMORY AT BOTTOM
-        st.markdown("<br><br><br>", unsafe_allow_html=True) # Spacer
-        
+        # WIPE MEMORY
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
         if "wipe_confirm" not in st.session_state: st.session_state.wipe_confirm = False
         
         if not st.session_state.wipe_confirm:
-            if st.button("WIPE MEMORY"):
+            if st.button("WIPE MEMORY", use_container_width=True):
                 st.session_state.wipe_confirm = True
                 st.rerun()
         else:
             st.markdown("<div style='color:#D31515; font-size:0.8rem; text-align:center; margin-bottom:5px;'>⚠️ DELETE ALL DATA?</div>", unsafe_allow_html=True)
             c_yes, c_no = st.columns(2)
             with c_yes:
-                if st.button("CONFIRM"):
-                    for f in os.listdir(STORAGE_DIR):
-                        os.remove(os.path.join(STORAGE_DIR, f))
+                if st.button("CONFIRM", use_container_width=True):
+                    for f in os.listdir(STORAGE_DIR): os.remove(os.path.join(STORAGE_DIR, f))
                     st.session_state.wipe_confirm = False
                     st.rerun()
             with c_no:
-                if st.button("CANCEL"):
+                if st.button("CANCEL", use_container_width=True):
                     st.session_state.wipe_confirm = False
                     st.rerun()
+        
+        st.markdown("<div style='margin-bottom:5px;'></div>", unsafe_allow_html=True)
+        if st.button("CLEAR SESSION CACHE", use_container_width=True):
+            st.session_state.messages = []
+            st.rerun()
 
 def render_metrics():
-    # Count only active files
     files = [f for f in os.listdir(STORAGE_DIR) if f != "metadata.json"]
     meta = load_metadata()
     active_count = sum(1 for f in files if meta.get(f, True))
