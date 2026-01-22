@@ -36,7 +36,7 @@ def inject_custom_css():
         p, div, span { color: var(--text-white); }
         [data-testid="stSidebar"] { background-color: var(--accent-black); border-right: 1px solid #111; }
         
-        /* REDUCE SIDEBAR TOP PADDING TO FIT LOGO BETTER */
+        /* ADJUST SIDEBAR PADDING FOR LOGO */
         section[data-testid="stSidebar"] > div > div:first-child {
             padding-top: 20px;
         }
@@ -161,41 +161,27 @@ class AIEngine:
 
 # --- 4. FRONTEND COMPONENTS ---
 
-def find_logo_file():
-    """Recursively searches for logo.png or similar files in the directory."""
-    target_names = ["logo.png", "logo.jpg", "logo.jpeg", "capture.png"]
-    
-    # 1. Check known specific paths first (Fastest)
-    known_paths = [
-        "assessts/logo.png", "assets/logo.png", "logo.png", 
-        "assessts/QR_logo, long, white.png", "assets/QR_logo, long, white.png"
-    ]
-    for p in known_paths:
-        if os.path.exists(p):
-            return p
-            
-    # 2. Deep Search (If above fails)
-    for root, dirs, files in os.walk("."):
-        for file in files:
-            if file.lower() in target_names or ("qr_logo" in file.lower() and file.endswith(".png")):
-                return os.path.join(root, file)
-    return None
-
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # --- LOGO SECTION (AUTO-DISCOVERY) ---
-        logo_path = find_logo_file()
+        # --- NEW ANCHOR LOGO SYSTEM ---
+        # 1. Get the directory where this script actually lives
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        if logo_path:
+        # 2. Build the exact path to logo.png in this same folder
+        logo_path = os.path.join(script_dir, "logo.png")
+        
+        # 3. Check and Render
+        if os.path.exists(logo_path):
             st.image(logo_path, use_container_width=True)
         else:
-            # Fallback if absolutely no logo is found
+            # Debug message so you see WHERE it is looking
+            st.warning(f"⚠️ 'logo.png' not found at: {logo_path}")
             st.markdown("""
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
             """, unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top: 10px; margin-bottom: 20px;'>ACCOUNTS OS v3.5</div>
+            <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top: 10px; margin-bottom: 20px;'>ACCOUNTS OS v3.6</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -274,14 +260,17 @@ def main():
 
     # Auto-Load
     if "local_loaded" not in st.session_state:
-        local_file = "table.tsv"
+        # Check current dir for table.tsv as well using the new method
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        local_file = os.path.join(script_dir, "table.tsv")
+        
         if os.path.exists(local_file):
             try:
                 df_local = pd.read_csv(local_file, sep='\t')
-                data_engine.ingest_data(df_local, local_file)
+                data_engine.ingest_data(df_local, "table.tsv")
                 st.session_state.active_df = df_local
                 st.session_state.local_loaded = True
-                st.toast(f"AUTO-MOUNT: {local_file} DETECTED & LOADED", icon="📂")
+                st.toast(f"AUTO-MOUNT: table.tsv DETECTED & LOADED", icon="📂")
             except Exception as e:
                 st.toast(f"AUTO-MOUNT ERROR: {e}", icon="⚠️")
         else:
