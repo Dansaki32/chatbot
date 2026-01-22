@@ -101,6 +101,22 @@ def inject_custom_css():
             letter-spacing: 1px;
         }
 
+        /* SIDEBAR BUTTONS (CLEAR CACHE) */
+        [data-testid="stSidebar"] .stButton button {
+            background-color: #000000 !important; /* Black Background */
+            color: var(--accent-red) !important;   /* Red Text */
+            border: 1px solid var(--accent-red) !important; /* Red Border */
+            font-family: var(--font-display) !important;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        [data-testid="stSidebar"] .stButton button:hover {
+            background-color: var(--accent-red) !important; /* Red Fill on Hover */
+            color: #FFFFFF !important; /* White Text on Hover */
+            box-shadow: 0 0 10px rgba(211, 21, 21, 0.4);
+        }
+
         /* 6. METRIC CARDS */
         .metric-card { 
             background: #000000; 
@@ -264,7 +280,7 @@ def render_sidebar(data_engine, ai_engine):
         else:
             st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
-        # Updated Subtitle with Dolce Vita Light
+        # Updated Subtitle
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
                 Accounts OS v3.8
@@ -273,8 +289,9 @@ def render_sidebar(data_engine, ai_engine):
         """, unsafe_allow_html=True)
 
         # Upload Section
+        # CHANGED: Font color to WHITE as requested
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 01 // DATA INGESTION
             </div>
         """, unsafe_allow_html=True)
@@ -297,8 +314,9 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Controls Section
+        # CHANGED: Font color to WHITE as requested
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#000000; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 02 // SYSTEM CONTROLS
             </div>
         """, unsafe_allow_html=True)
