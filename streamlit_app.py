@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. VISUAL CORE (CSS) ---
+# --- 2. VISUAL CORE (THE "NUCLEAR" CSS) ---
 def inject_custom_css():
     st.markdown("""
     <style>
@@ -35,74 +35,76 @@ def inject_custom_css():
             --text-white: #FFFFFF;
             --text-gray: #B0B0B0;
             
-            /* TYPE SYSTEM */
             --font-display: 'Dolce Vita Bold', 'Roboto', sans-serif;
             --font-subdisplay: 'Dolce Vita', 'Roboto', sans-serif;
             --font-body: 'Roboto', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
 
-        /* 3. GLOBAL RESETS */
-        .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
-        
-        .block-container { 
-            padding-top: 2rem !important; 
-            padding-bottom: 8rem !important; 
+        /* 3. GLOBAL SHARPNESS - SQUARE EVERYTHING */
+        * {
+            border-radius: 0px !important;
         }
+
+        /* 4. GLOBAL RESETS */
+        .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
+        .block-container { padding-top: 2rem !important; padding-bottom: 8rem !important; }
         
         h1, h2, h3 { 
             font-family: var(--font-display) !important; 
             letter-spacing: 2px !important; 
             text-transform: uppercase !important; 
         }
-        
-        p, div, span, li { 
-            font-family: var(--font-body); 
-            color: var(--text-white); 
-        }
+        p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* 4. SIDEBAR - ZERO PADDING LOGO FIX */
+        /* 5. SIDEBAR - LOGO FIX (NEGATIVE MARGIN TRICK) */
         [data-testid="stSidebar"] { 
             background-color: var(--sidebar-bg); 
             border-right: 1px solid #333; 
         }
-        section[data-testid="stSidebar"] > div { padding-top: 0rem !important; }
-        div[data-testid="stSidebarUserContent"] { padding-top: 0rem !important; }
+        /* This pulls the logo up past the default padding */
+        [data-testid="stSidebar"] img {
+            margin-top: -75px !important;
+            margin-bottom: 20px !important;
+        }
+        /* Remove default padding from the sidebar container */
+        section[data-testid="stSidebar"] > div {
+            padding-top: 2rem !important;
+        }
 
-        /* 5. FILE UPLOADER - SHARP & UNIFIED */
+        /* 6. FILE UPLOADER - TEXT VISIBILITY FIX */
         [data-testid="stFileUploader"] {
             background-color: #0A0A0A;
-            border: 1px solid #333; /* Solid border to match others */
+            border: 1px solid #333;
             padding: 15px;
-            border-radius: 0px !important; /* SHARP CORNERS */
         }
         [data-testid="stFileUploader"] section { background-color: #0A0A0A !important; }
         
-        /* Text Visibility */
-        [data-testid="stFileUploader"] div[data-testid="stMarkdownContainer"] p {
-            color: #FFFFFF !important; 
-            font-family: var(--font-body);
-            font-size: 0.9rem;
+        /* NUCLEAR TARGETING FOR TEXT - FORCE WHITE */
+        [data-testid="stFileUploader"] div,
+        [data-testid="stFileUploader"] span,
+        [data-testid="stFileUploader"] small,
+        [data-testid="stFileUploader"] p,
+        [data-testid="stFileUploader"] label {
+            color: #FFFFFF !important;
+            font-family: var(--font-body) !important;
         }
-        [data-testid="stFileUploader"] small { color: #666 !important; }
         
-        /* Button Unification */
+        /* Button Style */
         [data-testid="stFileUploader"] button { 
             background-color: var(--accent-red) !important; 
             color: white !important; 
             border: none; 
-            border-radius: 0px !important; /* SHARP */
             font-family: var(--font-display);
             letter-spacing: 1px;
             text-transform: uppercase;
         }
 
-        /* 6. SYSTEM CONTROLS (Sidebar Buttons) */
+        /* 7. SYSTEM CONTROLS (Sidebar Buttons) */
         [data-testid="stSidebar"] .stButton button {
             background-color: #000000 !important;
             color: var(--accent-red) !important;
             border: 1px solid var(--accent-red) !important;
-            border-radius: 0px !important; /* SHARP */
             font-family: var(--font-display) !important;
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -115,12 +117,11 @@ def inject_custom_css():
             box-shadow: 0 0 15px rgba(211, 21, 21, 0.3);
         }
 
-        /* 7. METRIC CARDS - UNIFIED AESTHETIC */
+        /* 8. METRIC CARDS */
         .metric-card { 
             background: #000000; 
             border: 1px solid #333; 
             padding: 20px; 
-            border-radius: 0px !important; /* SHARP */
             height: 100%; 
             transition: all 0.3s ease;
             margin-bottom: 20px;
@@ -150,7 +151,7 @@ def inject_custom_css():
             margin-top: 5px; 
         }
 
-        /* 8. CHAT INPUT - SHARP & ANCHORED */
+        /* 9. CHAT INPUT - FORCE DARK BACKGROUND */
         div[data-testid="stChatInput"] {
             background-color: var(--bg-color) !important;
             padding-bottom: 1.5rem !important;
@@ -161,7 +162,6 @@ def inject_custom_css():
             color: #FFFFFF !important; 
             caret-color: #D31515 !important;
             border: 1px solid #333 !important; 
-            border-radius: 0px !important; /* SHARP */
             font-family: var(--font-body) !important;
         }
         div[data-testid="stChatInput"] textarea:focus {
@@ -169,14 +169,13 @@ def inject_custom_css():
             box-shadow: 0 0 10px rgba(211, 21, 21, 0.2) !important;
         }
 
-        /* 9. TABS - CLEANER LOOK */
+        /* 10. TABS */
         button[data-baseweb="tab"] {
             font-family: var(--font-subdisplay) !important;
             letter-spacing: 1px;
-            border-radius: 0px !important;
         }
 
-        /* 10. ANIMATIONS */
+        /* 11. ANIMATIONS */
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .active-session-text { 
             color: var(--accent-red); 
@@ -269,7 +268,7 @@ def render_sidebar(data_engine, ai_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.4
+                Accounts OS v4.5
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
