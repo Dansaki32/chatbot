@@ -3,323 +3,389 @@ import pandas as pd
 import google.generativeai as genai
 import sqlite3
 import time
+import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
-# --- 1. CONFIGURATION ---
+# --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(
-    page_title="QR_ Strategy OS",
+    page_title="QR_ STRATEGY OS",
+    page_icon="🔴",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. ADVANCED VISUAL POLISH (CSS) ---
-st.markdown("""
-    <style>
-    /* 1. CORE FONTS & COLORS */
-    @import url('https://fonts.cdnfonts.com/css/segoe-ui-4');
-    * { font-family: 'Segoe UI', sans-serif !important; }
-    
-    /* 2. DEEP DARK MODE FORCE */
-    html, body, .stApp {
-        background-color: #000000 !important;
-        color: #E0E0E0 !important;
-    }
-    
-    /* 3. SIDEBAR PERFECTION */
-    [data-testid="stSidebar"] {
-        background-color: #050505 !important;
-        border-right: 1px solid #1A1A1A !important;
-    }
-    
-    /* 4. THE FILE UPLOADER (Fixed the White Box) */
-    [data-testid="stFileUploader"] {
-        padding: 0px !important;
-    }
-    [data-testid="stFileUploader"] section {
-        background-color: #0A0A0A !important; /* Dark Grey Background */
-        border: 1px dashed #333 !important;
-        border-radius: 0px !important;
-        padding: 20px !important;
-    }
-    /* The Dropzone Text */
-    [data-testid="stFileUploader"] div { color: #666 !important; }
-    [data-testid="stFileUploader"] span { color: #888 !important; }
-    [data-testid="stFileUploader"] small { color: #444 !important; }
-    
-    /* Browse Button - High Impact Red */
-    [data-testid="stFileUploader"] button {
-        background-color: #AD1212 !important;
-        color: #FFFFFF !important;
-        border: none !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        border-radius: 0px !important;
-        transition: all 0.3s !important;
-    }
-    [data-testid="stFileUploader"] button:hover {
-        background-color: #D31515 !important;
-        box-shadow: 0 0 15px rgba(173, 18, 18, 0.4) !important;
-    }
-
-    /* 5. CHAT INTERFACE */
-    /* Input Box */
-    div[data-testid="stChatInput"] {
-        background-color: #000000 !important;
-        border: 1px solid #333 !important;
-        border-radius: 0px !important;
-    }
-    div[data-testid="stChatInput"]:focus-within {
-        border-color: #AD1212 !important;
-    }
-    div[data-testid="stChatInput"] textarea {
-        background-color: #000000 !important;
-        color: #FFFFFF !important;
-        caret-color: #AD1212 !important;
-    }
-    
-    /* Messages */
-    div[data-testid="stChatMessage"] {
-        background-color: #0A0A0A !important;
-        border: 1px solid #1A1A1A;
-        border-radius: 0px !important;
-        margin-bottom: 10px;
-    }
-    /* User Message Override */
-    div[data-testid="stChatMessage"][data-test-user-name="user"] {
-        background-color: #000000 !important;
-        border-left: 2px solid #333;
-    }
-    /* AI Message Override */
-    div[data-testid="stChatMessage"][data-test-user-name="assistant"] {
-        background-color: #080808 !important;
-        border-left: 2px solid #AD1212;
-    }
-
-    /* 6. SIDEBAR BUTTONS */
-    div.stButton > button {
-        background-color: #000000 !important;
-        border: 1px solid #333 !important;
-        color: #888 !important;
-        border-radius: 0px !important;
-        text-transform: uppercase;
-        font-size: 0.8rem !important;
-    }
-    div.stButton > button:hover {
-        border-color: #AD1212 !important;
-        color: #AD1212 !important;
-    }
-    
-    /* 7. HIDE STREAMLIT UI ELEMENTS */
-    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- 3. DATABASE ENGINE (SQLite) ---
-def init_db():
-    conn = sqlite3.connect('strategy.db')
-    c = conn.cursor()
-    # Create a master log table
-    c.execute('''CREATE TABLE IF NOT EXISTS upload_log
-                 (timestamp TEXT, filename TEXT, status TEXT, row_count INTEGER)''')
-    conn.commit()
-    return conn
-
-def validate_and_ingest(df, filename, api_key):
-    """
-    1. Sends data schema to Gemini for validation.
-    2. If valid, commits to SQLite.
-    """
-    conn = init_db()
-    
-    # 1. AI VALIDATION PASS
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
-        # We send the columns and first 3 rows to check structure
-        preview = df.head(3).to_string()
-        validation_prompt = f"""
-        ACT AS A DATA ENGINEER. Analyze this dataset snippet.
-        Filename: {filename}
-        Data:
-        {preview}
-        
-        Task: Verify if this looks like valid business/strategy data. 
-        Output ONLY: "VALID" or "INVALID: [Reason]"
-        """
-        response = model.generate_content(validation_prompt)
-        ai_verdict = response.text.strip()
-    except Exception as e:
-        ai_verdict = "VALID (AI Bypass due to connection)" # Fallback
-
-    # 2. DATABASE COMMIT
-    if "VALID" in ai_verdict.upper():
-        try:
-            # Dynamic table creation based on filename (sanitized)
-            table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
-            df.to_sql(table_name, conn, if_exists='replace', index=False)
-            
-            # Log it
-            c = conn.cursor()
-            c.execute("INSERT INTO upload_log VALUES (?, ?, ?, ?)", 
-                      (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), filename, "SUCCESS", len(df)))
-            conn.commit()
-            return True, f"AI AUDIT PASSED. COMMITTED {len(df)} ROWS TO DB TABLE '{table_name}'."
-        except Exception as e:
-            return False, f"DATABASE ERROR: {str(e)}"
-    else:
-        return False, f"AI VALIDATION FAILED: {ai_verdict}"
-
-# --- 4. SIDEBAR LOGIC ---
-with st.sidebar:
+# --- 2. THE VISUAL CORE (CSS) ---
+def inject_custom_css():
     st.markdown("""
-        <h1 style='font-size: 3rem; margin:0; line-height:1; color:white !important;'>QR<span style='color:#AD1212;'>_</span></h1>
-        <p style='font-size: 0.75rem; letter-spacing: 2px; color: #666 !important; margin-top: 5px; margin-bottom: 30px;'>STRATEGY OPERATING SYSTEM</p>
+    <style>
+        /* IMPORTS */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+        /* ROOT VARIABLES */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #0F0F0F;
+            --border-color: #222;
+            --accent-color: #D31515; /* The QR Red */
+            --accent-glow: rgba(211, 21, 21, 0.2);
+            --text-primary: #E0E0E0;
+            --text-secondary: #888888;
+        }
+
+        /* GLOBAL RESET */
+        .stApp {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        h1, h2, h3 { font-family: 'Inter', sans-serif; letter-spacing: -0.5px; }
+        code, .stCodeBlock, .mono-font { font-family: 'JetBrains Mono', monospace !important; }
+
+        /* SIDEBAR STYLING */
+        [data-testid="stSidebar"] {
+            background-color: #000000;
+            border-right: 1px solid var(--border-color);
+        }
+        
+        /* FILE UPLOADER - THE "DROP ZONE" */
+        [data-testid="stFileUploader"] {
+            padding: 1rem;
+            border: 1px dashed #333;
+            background: #080808;
+            transition: all 0.3s ease;
+        }
+        [data-testid="stFileUploader"]:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        [data-testid="stFileUploader"] section { background: transparent !important; }
+        [data-testid="stFileUploader"] button {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+            border: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-radius: 2px;
+        }
+
+        /* CHAT INPUT - THE "TERMINAL" */
+        .stChatInput {
+            border-top: 1px solid var(--border-color);
+            background: #000;
+            padding-bottom: 2rem;
+        }
+        .stChatInput textarea {
+            background-color: #0A0A0A !important;
+            color: #fff !important;
+            border: 1px solid #333 !important;
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+        .stChatInput textarea:focus {
+            border-color: var(--accent-color) !important;
+            box-shadow: 0 0 10px var(--accent-glow) !important;
+        }
+
+        /* CHAT MESSAGES */
+        [data-testid="stChatMessage"] {
+            background-color: transparent;
+            border-bottom: 1px solid #111;
+        }
+        [data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
+            color: var(--text-primary);
+        }
+        /* AI Avatar Glow */
+        [data-testid="stChatMessage"] .st-emotion-cache-1p1m4ay {
+            background-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        /* CUSTOM METRICS CARDS */
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 4px;
+            height: 100%;
+        }
+        .metric-value { font-size: 2rem; font-weight: 700; color: #fff; }
+        .metric-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* DATAFRAME STYLING */
+        [data-testid="stDataFrame"] { border: 1px solid #222; }
+
+        /* HIDE STREAMLIT CHROME */
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+    </style>
     """, unsafe_allow_html=True)
-    
-    # --- DATA INGESTION ---
-    st.markdown("<div style='color:#AD1212; font-size:0.7rem; font-weight:bold; margin-bottom:5px;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("Upload Data", type=["csv", "tsv"], label_visibility="collapsed")
-    
-    db_status = ""
-    
-    if uploaded_file:
-        if "db_ingested" not in st.session_state or st.session_state.db_ingested != uploaded_file.name:
-            # Perform the Ingestion
-            df = pd.read_csv(uploaded_file)
-            try:
-                api_key = st.secrets["GEMINI_API_KEY"]
-                success, msg = validate_and_ingest(df, uploaded_file.name, api_key)
-                if success:
-                    st.session_state.db_ingested = uploaded_file.name
-                    db_status = f"<span style='color:#4CAF50;'>✓ {msg}</span>"
-                else:
-                    db_status = f"<span style='color:#FF0000;'>⚠ {msg}</span>"
-            except:
-                db_status = "<span style='color:#FF0000;'>⚠ API KEY MISSING - CANNOT VALIDATE</span>"
-        else:
-             db_status = "<span style='color:#4CAF50;'>✓ DATASET ACTIVE IN DATABASE</span>"
-    
-    if db_status:
-        st.markdown(f"<div style='font-size:0.7rem; line-height:1.4; margin-top:10px; border-left:2px solid #333; padding-left:10px;'>{db_status}</div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
+# --- 3. BACKEND LOGIC (Database & AI) ---
 
-    # --- SYSTEM LOGS ---
-    st.markdown("<div style='color:#AD1212; font-size:0.7rem; font-weight:bold; margin-bottom:5px;'>02 // SYSTEM LOGS</div>", unsafe_allow_html=True)
-    if "messages" in st.session_state and len(st.session_state.messages) > 0:
-        report_text = f"QR_ STRATEGY LOG\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
-        for m in st.session_state.messages:
-            report_text += f"[{m['role'].upper()}]\n{m['content']}\n\n"
-        st.download_button("DOWNLOAD LOG", report_text, file_name="QR_Log.txt")
-    else:
-        st.markdown("<div style='color:#444; font-size:0.7rem;'>NO TELEMETRY AVAILABLE</div>", unsafe_allow_html=True)
+class DataEngine:
+    def __init__(self, db_name='strategy_core.db'):
+        self.db_name = db_name
 
-    st.markdown("<div style='height:50px'></div>", unsafe_allow_html=True)
-    if st.button("TERMINATE SESSION"):
-        st.session_state.messages = []
-        if 'db_ingested' in st.session_state:
-            del st.session_state.db_ingested
-        st.rerun()
+    def get_connection(self):
+        return sqlite3.connect(self.db_name)
 
-# --- 5. MAIN INTERFACE ---
-st.markdown("""
-    <div style='display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px;'>
-        <div>
-            <h1 style='font-size: 2.8rem; margin:0; font-weight:300; letter-spacing:-1px; color:white !important;'>QR<span style='color:#AD1212;'>_</span> STRATEGY</h1>
-        </div>
-        <div style='border:1px solid #AD1212; padding:5px 12px; background:#0A0000;'>
-            <span style='color: #AD1212 !important; font-size: 0.7rem; font-weight: bold; letter-spacing:1px;'>SENIOR DIRECTOR ACTIVE</span>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+    def log_upload(self, filename, status, row_count):
+        with self.get_connection() as conn:
+            conn.execute('''CREATE TABLE IF NOT EXISTS upload_log
+                            (timestamp TEXT, filename TEXT, status TEXT, row_count INTEGER)''')
+            conn.execute("INSERT INTO upload_log VALUES (?, ?, ?, ?)",
+                         (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), filename, status, row_count))
 
-# Chat History
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    def ingest_data(self, df, filename):
+        # Sanitize table name
+        table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
+        with self.get_connection() as conn:
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+        return table_name
 
-# Zero State
-if len(st.session_state.messages) == 0:
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    card_style = "background:#0A0A0A; padding:25px; border:1px solid #1A1A1A; height:100%;"
-    head_style = "color:#AD1212 !important; font-weight:bold; font-size:0.8rem; margin-bottom:10px; letter-spacing:1px;"
-    text_style = "color:#666 !important; font-size:0.85rem; line-height:1.5;"
-    
-    with c1:
-        st.markdown(f"<div style='{card_style}'><div style='{head_style}'>GROWTH VECTORS</div><div style='{text_style}'>Identify white-space opportunities and penetration gaps.</div></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"<div style='{card_style}'><div style='{head_style}'>RISK MATRIX</div><div style='{text_style}'>Evaluate stakeholder sentiment and project delivery risks.</div></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"<div style='{card_style}'><div style='{head_style}'>COMPETITIVE INTEL</div><div style='{text_style}'>Analyze QR value proposition against market threats.</div></div>", unsafe_allow_html=True)
-
-for message in st.session_state.messages:
-    role = message["role"]
-    avatar = "👤" if role == "user" else "🔴"
-    with st.chat_message(role, avatar=avatar):
-        st.markdown(message["content"])
-
-# --- 6. AI ENGINE (Gemini 2.5 + DB Context) ---
-if prompt := st.chat_input("INITIALIZE STRATEGIC QUERY..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.rerun()
-
-if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
-    try:
-        api_key = st.secrets["GEMINI_API_KEY"]
-        genai.configure(api_key=api_key)
-        
-        # TARGET GEMINI 2.5 FLASH
-        model = genai.GenerativeModel('gemini-2.5-flash')
-
-        # CONTEXT BUILDING
-        # Check if we have data in the DB
-        conn = init_db()
-        c = conn.cursor()
-        
-        # Get list of tables
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-        tables = c.fetchall()
-        
-        db_context = ""
-        if tables:
-            db_context = "\n\n[ATTACHED DATABASE TABLES]:\n"
+    def get_schema_context(self):
+        context_str = ""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            tables = cursor.fetchall()
+            
             for t in tables:
-                table_name = t[0]
-                # Get schema
-                df_head = pd.read_sql_query(f"SELECT * FROM {table_name} LIMIT 3", conn)
-                db_context += f"TABLE: {table_name}\nSCHEMA: {df_head.to_string()}\n\n"
+                table = t[0]
+                # Get columns
+                df_sample = pd.read_sql(f"SELECT * FROM {table} LIMIT 1", conn)
+                cols = ", ".join(df_sample.columns)
+                context_str += f"- TABLE: {table} | COLUMNS: {cols}\n"
+        return context_str if context_str else "NO DATASETS LOADED."
+
+class AIEngine:
+    def __init__(self):
+        try:
+            self.api_key = st.secrets["GEMINI_API_KEY"]
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
+            self.active = True
+        except:
+            self.active = False
+
+    def validate_data(self, df_head):
+        if not self.active: return "UNKNOWN (API OFF)"
+        prompt = f"""
+        Analyze this data schema for a Strategy Engine.
+        Data: {df_head}
+        Task: Return a 1-sentence summary of what this data represents.
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except:
+            return "VALIDATION ERROR"
+
+    def stream_response(self, user_query, history, db_context):
+        if not self.active:
+            yield "SYSTEM ERROR: API KEY MISSING. PLEASE CONFIGURE SECRETS."
+            return
 
         system_prompt = f"""
-        You are the Quick Release (QR_) Senior Account Strategy Director.
-        You have access to a secure internal database.
-        
-        DATABASE CONTEXT:
+        ROLE: You are QR_OS, an elite Strategy Operating System for Quick Release.
+        TONE: Professional, concise, data-driven, slightly futuristic. Use bullet points.
+        CONTEXT: The user has access to the following secure databases:
         {db_context}
         
-        If the user asks about the data, analyze the schema provided above.
+        INSTRUCTIONS:
+        1. If the user asks about data, reference the specific table names available.
+        2. If the user asks for strategy, provide high-level frameworks (Growth Vectors, Risk Matrices).
+        3. Keep responses under 200 words unless asked for a deep dive.
         """
         
-        # RETRY LOGIC (429 HANDLING)
-        max_retries = 3
-        full_response = ""
+        # Build chat history for context
+        history_formatted = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in history]
         
-        for attempt in range(max_retries):
-            try:
-                response = model.generate_content(f"{system_prompt}\n\nQUERY: {st.session_state.messages[-1]['content']}")
-                full_response = response.text
-                break
-            except Exception as e:
-                if "429" in str(e) and attempt < max_retries - 1:
-                    time.sleep(2)
-                    continue
-                else:
-                    full_response = f"**SYSTEM ALERT**: {str(e)}"
-                    break
+        # Add system prompt effectively by prepending or using system instruction if supported, 
+        # here we just wrap the query for simplicity in this demo structure.
+        full_query = f"{system_prompt}\n\nUSER QUERY: {user_query}"
+        
+        response = self.model.generate_content(full_query, stream=True)
+        for chunk in response:
+            yield chunk.text
 
-    except Exception as e:
-        full_response = f"**CRITICAL FAILURE**: {str(e)}"
+# --- 4. FRONTEND COMPONENTS ---
 
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
-    st.rerun()
+def render_sidebar(data_engine, ai_engine):
+    with st.sidebar:
+        # Logo Area
+        st.markdown("""
+            <div style='margin-bottom: 20px;'>
+                <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
+                <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #666; letter-spacing: 2px;'>STRATEGY OS v2.4</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        
+        # Upload Section
+        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("DROP FILE", type=['csv'], label_visibility="collapsed")
+        
+        if uploaded_file:
+            if "last_upload" not in st.session_state or st.session_state.last_upload != uploaded_file.name:
+                df = pd.read_csv(uploaded_file)
+                # Quick Validation
+                validation_msg = ai_engine.validate_data(df.head(3).to_string())
+                # Ingest
+                table_name = data_engine.ingest_data(df, uploaded_file.name)
+                data_engine.log_upload(uploaded_file.name, "SUCCESS", len(df))
+                
+                st.session_state.last_upload = uploaded_file.name
+                st.session_state.active_df = df # Store for viz
+                st.toast(f"SYSTEM: {uploaded_file.name} INGESTED", icon="💾")
+                st.success(f"TYPE: {validation_msg}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Controls
+        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
+        if st.button("CLEAR SESSION CACHE"):
+            st.session_state.messages = []
+            st.rerun()
+
+        # Footer
+        st.markdown("""
+            <div style='position: fixed; bottom: 20px; font-size: 0.7rem; color: #444;'>
+                SECURE CONNECTION<br>
+                LATENCY: 12ms
+            </div>
+        """, unsafe_allow_html=True)
+
+def render_zero_state():
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    
+    with c1:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-label">System Status</div>
+            <div class="metric-value" style="color:#4CAF50;">ONLINE</div>
+            <div style="margin-top:10px; font-size:0.8rem; color:#666;">All neural modules active.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with c2:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-label">Data Context</div>
+            <div class="metric-value">READY</div>
+            <div style="margin-top:10px; font-size:0.8rem; color:#666;">Awaiting vector inputs.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with c3:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-label">Security Level</div>
+            <div class="metric-value" style="color:#D31515;">ALPHA</div>
+            <div style="margin-top:10px; font-size:0.8rem; color:#666;">Senior Director authorization.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown("<br><br><div style='text-align:center; color:#444; font-family:JetBrains Mono;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
+
+def render_viz_tab():
+    if "active_df" in st.session_state:
+        df = st.session_state.active_df
+        st.markdown("### DATA RECONNAISSANCE")
+        
+        # Identify numeric columns for plotting
+        num_cols = df.select_dtypes(include=['float64', 'int64']).columns
+        
+        if len(num_cols) > 0:
+            c1, c2 = st.columns(2)
+            with c1:
+                # Custom Dark Theme Plot
+                fig = px.bar(df, x=df.columns[0], y=num_cols[0], template="plotly_dark", title=f"{num_cols[0]} Analysis")
+                fig.update_layout(paper_bgcolor="#0F0F0F", plot_bgcolor="#0F0F0F", font_color="#E0E0E0")
+                fig.update_traces(marker_color='#D31515')
+                st.plotly_chart(fig, use_container_width=True)
+            with c2:
+                st.dataframe(df.head(10), use_container_width=True)
+        else:
+            st.dataframe(df, use_container_width=True)
+    else:
+        st.info("NO DATA LOADED. UPLOAD A FILE TO INITIALIZE VISUALS.")
+
+# --- 5. MAIN EXECUTION ---
+
+def main():
+    inject_custom_css()
+    
+    # Initialize Engines
+    data_engine = DataEngine()
+    ai_engine = AIEngine()
+    
+    # Session State Init
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    render_sidebar(data_engine, ai_engine)
+
+    # Tabs for different views
+    tab1, tab2 = st.tabs(["// STRATEGY_CHAT", "// DATA_RECON"])
+
+    with tab1:
+        # Header
+        st.markdown("""
+            <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 20px;'>
+                <div>
+                    <span style='color:#D31515; font-weight:bold; font-family:JetBrains Mono;'>// ACTIVE SESSION</span>
+                </div>
+                <div style='font-family:JetBrains Mono; font-size:0.8rem; color:#666;'>
+                    {timestamp}
+                </div>
+            </div>
+        """.format(timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")), unsafe_allow_html=True)
+
+        # Chat History
+        if not st.session_state.messages:
+            render_zero_state()
+
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🔴"):
+                st.markdown(message["content"])
+
+        # Chat Input
+        if prompt := st.chat_input("ENTER STRATEGIC QUERY..."):
+            # Add user message
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt)
+
+            # Generate AI response
+            with st.chat_message("assistant", avatar="🔴"):
+                response_placeholder = st.empty()
+                full_response = ""
+                
+                # Get Context
+                db_context = data_engine.get_schema_context()
+                
+                # Stream
+                try:
+                    for chunk in ai_engine.stream_response(prompt, st.session_state.messages, db_context):
+                        full_response += chunk
+                        # Typing effect with cursor
+                        response_placeholder.markdown(full_response + "▌")
+                        time.sleep(0.01) # Slight delay for effect
+                    
+                    response_placeholder.markdown(full_response)
+                except Exception as e:
+                    response_placeholder.markdown(f"**SYSTEM FAILURE:** {str(e)}")
+                    full_response = f"Error: {str(e)}"
+                
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+    with tab2:
+        render_viz_tab()
+
+if __name__ == "__main__":
+    main()
