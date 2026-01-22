@@ -158,13 +158,12 @@ class AIEngine:
 
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # --- LOGO SECTION (UPDATED) ---
-        # Checks your 'assessts' folder first
+        # --- LOGO SECTION (UPDATED FOR logo.png) ---
         possible_paths = [
-            "assessts/QR_logo, long, white.png",  # Found in your screenshot
-            "assets/QR_logo, long, white.png",    # Just in case you rename it
-            "QR_logo, long, white.png",           # Root fallback
-            "Capture.PNG"
+            "assessts/logo.png",                  # 1. Your requested file in your folder
+            "logo.png",                           # 2. Root fallback
+            "assessts/QR_logo, long, white.png",  # 3. Screenshot file fallback
+            "assets/logo.png"                     # 4. Standard folder fallback
         ]
         
         logo_path = None
@@ -176,7 +175,7 @@ def render_sidebar(data_engine, ai_engine):
         if logo_path:
             st.image(logo_path, use_container_width=True)
         else:
-            # Fallback Text Logo
+            # Fallback Text if image fails to load
             st.markdown("""
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
             """, unsafe_allow_html=True)
@@ -214,7 +213,6 @@ def render_sidebar(data_engine, ai_engine):
 def render_zero_state():
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
-    # All Green text
     status_color = "#4CAF50"
     
     st.markdown("<br><br>", unsafe_allow_html=True)
