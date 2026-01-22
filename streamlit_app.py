@@ -174,7 +174,7 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("<br>", unsafe_allow_html=True)
         
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
-        if st.button("<div style='color:#D31515; font-weight:bold;'>02 // SESSION CACHE</div>"):
+        if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
 
@@ -210,7 +210,7 @@ def render_zero_state():
         <div class="metric-card">
             <div class="metric-label">Personality level</div>
             <div class="metric-value" style="color:#D31515;">Senior Director</div>
-            <div class="metric-desc">ALpha.</div>
+            <div class="metric-desc">Active.</div>
         </div>
         """, unsafe_allow_html=True)
         
