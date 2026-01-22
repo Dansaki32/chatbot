@@ -19,8 +19,24 @@ st.set_page_config(
 def inject_custom_css():
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+        /* 1. LOAD ROBOTO FROM GOOGLE FONTS */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400&display=swap');
 
+        /* 2. LOAD LOCAL CUSTOM FONTS (DOLCE VITA) */
+        @font-face {
+            font-family: 'Dolce Vita';
+            src: url('Dolce Vita.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Dolce Vita Light';
+            src: url('Dolce Vita Light.ttf') format('truetype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        /* 3. ROOT VARIABLES */
         :root {
             --bg-color: #262626;
             --accent-black: #000000;
@@ -29,22 +45,58 @@ def inject_custom_css():
             --highlight-red: #D31515;
             --highlight-green: #4CAF50;
             --input-bg: #333333;
+            
+            /* Define Fonts */
+            --font-main: 'Roboto', sans-serif;
+            --font-header: 'Dolce Vita', 'Roboto', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
-        .stApp { background-color: var(--bg-color); color: var(--text-white); font-family: 'Inter', sans-serif; }
-        h1, h2, h3, h4, h5, h6 { color: var(--text-white) !important; font-family: 'Inter', sans-serif; letter-spacing: -0.5px; }
-        p, div, span { color: var(--text-white); }
-        [data-testid="stSidebar"] { background-color: var(--accent-black); border-right: 1px solid #111; }
+        /* 4. GLOBAL RESETS */
+        .stApp { 
+            background-color: var(--bg-color); 
+            color: var(--text-white); 
+            font-family: var(--font-main); 
+        }
         
-        /* ADJUST SIDEBAR PADDING FOR LOGO */
+        /* APPLY DOLCE VITA TO HEADINGS */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-white) !important;
+            font-family: var(--font-header) !important; 
+            letter-spacing: 1px; 
+            font-weight: normal;
+        }
+        
+        /* General Text */
+        p, div, span, button, input { 
+            font-family: var(--font-main); 
+            color: var(--text-white); 
+        }
+
+        /* SIDEBAR STYLING */
+        [data-testid="stSidebar"] { 
+            background-color: var(--accent-black); 
+            border-right: 1px solid #111; 
+        }
         section[data-testid="stSidebar"] > div > div:first-child {
             padding-top: 20px;
         }
 
         /* FILE UPLOADER */
-        [data-testid="stFileUploader"] { padding: 1rem; background: var(--accent-black); border: 1px solid #444; border-radius: 4px; }
-        [data-testid="stFileUploader"] div { color: var(--text-gray) !important; }
-        [data-testid="stFileUploader"] button { background-color: var(--highlight-red) !important; color: white !important; border: none; font-weight: bold; }
+        [data-testid="stFileUploader"] { 
+            padding: 1rem; 
+            background: var(--accent-black); 
+            border: 1px solid #444; 
+            border-radius: 0px; 
+        }
+        [data-testid="stFileUploader"] div { color: var(--text-gray) !important; font-family: var(--font-main); }
+        [data-testid="stFileUploader"] button { 
+            background-color: var(--highlight-red) !important; 
+            color: white !important; 
+            border: none; 
+            font-weight: bold;
+            font-family: var(--font-header);
+        }
 
         /* SIDEBAR BUTTONS */
         [data-testid="stSidebar"] .stButton button {
@@ -52,6 +104,8 @@ def inject_custom_css():
             border-color: #333 !important;
             background-color: transparent !important;
             font-weight: bold !important;
+            font-family: var(--font-header) !important;
+            letter-spacing: 1px;
             transition: all 0.3s ease;
         }
         [data-testid="stSidebar"] .stButton button:hover {
@@ -59,23 +113,64 @@ def inject_custom_css():
             box-shadow: 0 0 10px rgba(211, 21, 21, 0.2);
         }
 
-        /* INPUT & CHAT */
+        /* CHAT INPUT */
         .stChatInput { background: transparent; padding-bottom: 2rem; }
-        .stChatInput textarea { background-color: var(--input-bg) !important; color: #FFFFFF !important; border: 1px solid #555 !important; border-radius: 8px !important; font-family: 'Inter', sans-serif !important; }
-        .stChatInput textarea:focus { border-color: var(--highlight-red) !important; box-shadow: 0 0 0 1px var(--highlight-red) !important; }
+        .stChatInput textarea { 
+            background-color: var(--input-bg) !important; 
+            color: #FFFFFF !important; 
+            border: 1px solid #555 !important; 
+            border-radius: 4px !important; 
+            font-family: var(--font-main) !important; 
+        }
+        .stChatInput textarea:focus { 
+            border-color: var(--highlight-red) !important; 
+            box-shadow: 0 0 0 1px var(--highlight-red) !important; 
+        }
         
+        /* CHAT MESSAGES */
         [data-testid="stChatMessage"] { background-color: transparent; border-bottom: 1px solid #333; }
         [data-testid="stChatMessage"] .st-emotion-cache-1p1m4ay { background-color: var(--highlight-red); }
 
         /* CARDS */
-        .metric-card { background: var(--accent-black); border: 1px solid #333; padding: 20px; border-radius: 6px; height: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .metric-value { font-size: 2rem; font-weight: 700; color: var(--text-white); }
-        .metric-label { font-size: 0.85rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
-        .metric-desc { font-size: 0.8rem; color: #888; }
+        .metric-card { 
+            background: var(--accent-black); 
+            border: 1px solid #333; 
+            padding: 20px; 
+            border-radius: 0px; 
+            height: 100%; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+        }
+        .metric-value { 
+            font-family: var(--font-header);
+            font-size: 2rem; 
+            font-weight: normal; 
+            color: var(--text-white); 
+        }
+        .metric-label { 
+            font-family: var(--font-main);
+            font-size: 0.85rem; 
+            color: var(--text-gray); 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-bottom: 5px; 
+            font-weight: 600; 
+        }
+        .metric-desc { 
+            font-family: var(--font-main);
+            font-size: 0.8rem; 
+            color: #888; 
+        }
 
         /* TABS */
-        button[data-baseweb="tab"] { background-color: transparent !important; color: var(--text-gray) !important; }
-        button[data-baseweb="tab"][aria-selected="true"] { color: var(--text-white) !important; border-bottom-color: var(--highlight-red) !important; }
+        button[data-baseweb="tab"] { 
+            background-color: transparent !important; 
+            color: var(--text-gray) !important; 
+            font-family: var(--font-header) !important;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] { 
+            color: var(--text-white) !important; 
+            border-bottom-color: var(--highlight-red) !important; 
+        }
 
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
     </style>
@@ -163,30 +258,38 @@ class AIEngine:
 
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # --- NEW ANCHOR LOGO SYSTEM ---
-        # 1. Get the directory where this script actually lives
+        # --- LOGO SECTION (LOOKING FOR logo.png) ---
         script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # 2. Build the exact path to logo.png in this same folder
-        logo_path = os.path.join(script_dir, "logo.png")
+        # Priority search
+        possible_paths = [
+            os.path.join(script_dir, "logo.png"),              # Priority 1: Main folder
+            os.path.join(script_dir, "assets", "logo.png"),    # Priority 2: Assets
+            os.path.join(script_dir, "assessts", "logo.png"),  # Priority 3: Typos
+            "logo.png"                                         # Fallback
+        ]
         
-        # 3. Check and Render
-        if os.path.exists(logo_path):
+        logo_path = None
+        for p in possible_paths:
+            if os.path.exists(p):
+                logo_path = p
+                break
+        
+        if logo_path:
             st.image(logo_path, use_container_width=True)
         else:
-            # Debug message so you see WHERE it is looking
-            st.warning(f"⚠️ 'logo.png' not found at: {logo_path}")
+            # Fallback Text
             st.markdown("""
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
             """, unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top: 10px; margin-bottom: 20px;'>ACCOUNTS OS v3.6</div>
+            <div style='font-family: "Dolce Vita", sans-serif; font-size: 0.8rem; color: #CCCCCC; letter-spacing: 2px; margin-top: 10px; margin-bottom: 20px;'>ACCOUNTS OS v3.8</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
         # Upload
-        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px; font-family: Roboto;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv'], label_visibility="collapsed")
         
         if uploaded_file:
@@ -205,7 +308,7 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Controls
-        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
+        st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px; font-family: Roboto;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
         if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
@@ -260,7 +363,6 @@ def main():
 
     # Auto-Load
     if "local_loaded" not in st.session_state:
-        # Check current dir for table.tsv as well using the new method
         script_dir = os.path.dirname(os.path.abspath(__file__))
         local_file = os.path.join(script_dir, "table.tsv")
         
@@ -284,7 +386,7 @@ def main():
         st.markdown("""
             <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
                 <div>
-                    <span style='color:#D31515; font-weight:bold; font-family:JetBrains Mono;'>// ACTIVE SESSION</span>
+                    <span style='color:#D31515; font-weight:bold; font-family: "Dolce Vita", sans-serif;'>// ACTIVE SESSION</span>
                 </div>
                 <div style='font-family:JetBrains Mono; font-size:0.8rem; color:#CCC;'>
                     {timestamp}
