@@ -56,16 +56,29 @@ def inject_custom_css():
         [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
-        /* --- MICRO BUTTONS FOR SIDEBAR FILES --- */
-        /* Target the small columns in sidebar specifically */
-        [data-testid="stSidebar"] div[data-testid="column"] button {
-            font-size: 0.6rem !important;
-            padding: 0px 5px !important;
-            min-height: 20px !important;
-            height: 24px !important;
-            line-height: 1 !important;
-            margin-top: 0px !important;
-            width: 100%;
+        /* --- BUTTON STYLING (GLOBAL BLACK THEME) --- */
+        /* Default State (Inactive) */
+        div.stButton > button { 
+            background-color: #000000 !important; 
+            color: #AAAAAA !important; 
+            border: 1px solid #333 !important; 
+            font-family: var(--font-display) !important; 
+            text-transform: uppercase; 
+            font-size: 0.7rem !important;
+            transition: all 0.2s ease;
+        }
+        
+        /* Hover State */
+        div.stButton > button:hover { 
+            border-color: var(--accent-red) !important; 
+            color: #FFFFFF !important; 
+        }
+
+        /* Active State (Primary Buttons) */
+        div.stButton > button[kind="primary"] {
+            background-color: var(--accent-red) !important;
+            color: #FFFFFF !important;
+            border: 1px solid var(--accent-red) !important;
         }
 
         /* METRIC CARDS */
@@ -213,7 +226,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.6</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.7</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -240,36 +253,37 @@ def render_sidebar(knowledge_engine):
             for f in files:
                 is_active = meta.get(f, True)
                 
-                # VISUAL FEEDBACK ON FILENAME
-                name_color = "#4CAF50" if is_active else "#666"
+                # File Name Display
                 status_icon = "🟢" if is_active else "⚫"
+                opacity = "1.0" if is_active else "0.5"
                 st.markdown(f"""
-                <div style="font-size:0.75rem; color:{name_color}; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <div style="font-size:0.8rem; color:white; opacity:{opacity}; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     {status_icon} {f}
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # CONTROL BUTTONS
-                # We use 'primary' type for the active state to make it filled/bright
-                c1, c2, c3 = st.columns([1, 1, 1.2])
+                # 3-BUTTON ROW
+                # We use 'primary' to fill the button RED when active.
+                # We use 'secondary' (default black) when inactive.
+                c1, c2, c3 = st.columns([1, 1, 1.5])
                 
                 with c1:
-                    # ON Button (Red if active, grey if not)
+                    # ON Button: Red if active
                     if st.button("ON", key=f"on_{f}", type="primary" if is_active else "secondary"):
                         set_file_status(f, True)
                         st.rerun()
                 with c2:
-                    # OFF Button (Red if inactive, grey if active)
+                    # OFF Button: Red if inactive (meaning 'Off' is active status)
                     if st.button("OFF", key=f"off_{f}", type="primary" if not is_active else "secondary"):
                         set_file_status(f, False)
                         st.rerun()
                 with c3:
-                    # REMOVE Button (Always secondary/grey until hovered)
+                    # REMOVE Button: Always secondary
                     if st.button("REMOVE", key=f"del_{f}", type="secondary"):
                         delete_file(f)
                         st.rerun()
                 
-                st.markdown("<div style='margin-bottom:10px; border-bottom:1px solid #222;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='margin-bottom:15px; border-bottom:1px solid #222;'></div>", unsafe_allow_html=True)
         else:
             st.markdown("<div style='color:#444; font-size:0.8rem; font-style:italic;'>Memory Empty</div>", unsafe_allow_html=True)
 
@@ -278,12 +292,11 @@ def render_sidebar(knowledge_engine):
         if "wipe_confirm" not in st.session_state: st.session_state.wipe_confirm = False
         
         if not st.session_state.wipe_confirm:
-            # WIDE button for WIPE
             if st.button("WIPE MEMORY"):
                 st.session_state.wipe_confirm = True
                 st.rerun()
         else:
-            st.markdown("<div style='color:#D31515; font-size:0.8rem; text-align:center; margin-bottom:5px;'>⚠️ CONFIRM WIPE?</div>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#D31515; font-size:0.8rem; text-align:center; margin-bottom:5px;'>⚠️ DELETE ALL DATA?</div>", unsafe_allow_html=True)
             c_yes, c_no = st.columns(2)
             with c_yes:
                 if st.button("YES", type="primary"):
