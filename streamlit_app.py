@@ -45,32 +45,33 @@ def inject_custom_css():
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
         
         /* FIX: REDUCE TOP PADDING FOR MAIN PAGE */
-        .block-container { padding-top: 2rem !important; padding-bottom: 5rem !important; }
+        /* FIX: INCREASE BOTTOM PADDING TO STABILIZE CHAT INPUT */
+        .block-container { 
+            padding-top: 2rem !important; 
+            padding-bottom: 8rem !important; /* Prevents chat box jumpiness */
+        }
         
         h1, h2, h3 { font-family: var(--font-display) !important; letter-spacing: 1px; text-transform: uppercase; }
         p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* 4. SIDEBAR - LOGO FIX (ABSOLUTE TOP) */
+        /* 4. SIDEBAR - LOGO FIX (ABSOLUTE TOP LEFT) */
         [data-testid="stSidebar"] { 
             background-color: var(--sidebar-bg); 
             border-right: 1px solid #333; 
         }
         
-        /* AGGRESSIVELY REMOVE ALL TOP PADDING FROM SIDEBAR */
+        /* REMOVE ALL DEFAULT STREAMLIT PADDING FROM SIDEBAR */
         section[data-testid="stSidebar"] > div {
-            padding-top: 1rem !important; /* Slight buffer from top edge */
-        }
-        div[data-testid="stSidebarUserContent"] {
-            padding-top: 0px !important;
+            padding-top: 0rem !important;
         }
         
-        /* Ensure image has no extra margin */
-        [data-testid="stSidebar"] img {
-            margin-top: 0px !important;
-            margin-bottom: 0px !important;
+        /* TARGET THE USER CONTENT CONTAINER TO REMOVE GAP */
+        div[data-testid="stSidebarUserContent"] {
+            padding-top: 0rem !important;
+            margin-top: -20px !important; /* Pull it up even further if needed */
         }
 
-        /* 5. FILE UPLOADER - TEXT VISIBILITY FIX */
+        /* 5. FILE UPLOADER - TEXT VISIBILITY FIX (WHITE TEXT) */
         [data-testid="stFileUploader"] {
             background-color: #111111;
             border: 1px dashed #444;
@@ -79,14 +80,13 @@ def inject_custom_css():
         }
         [data-testid="stFileUploader"] section { background-color: #111111 !important; }
         
-        /* Force "Drag and drop file here" text to be WHITE */
-        [data-testid="stFileUploader"] div[data-testid="stMarkdownContainer"] p {
+        /* Force specific text elements to be WHITE */
+        [data-testid="stFileUploader"] div, 
+        [data-testid="stFileUploader"] span, 
+        [data-testid="stFileUploader"] small,
+        [data-testid="stFileUploader"] p {
             color: #FFFFFF !important; 
             font-family: var(--font-body);
-        }
-        /* Small "Limit 200MB..." text */
-        [data-testid="stFileUploader"] small {
-            color: #888888 !important;
         }
         
         /* Button Style */
@@ -130,8 +130,11 @@ def inject_custom_css():
         .metric-desc { font-family: var(--font-body); font-size: 0.75rem; color: #666; margin-top: 5px; }
 
         /* 8. CHAT INPUT STABILITY */
+        /* Fixed bottom position logic handled by Streamlit, but we style the box */
         div[data-testid="stChatInput"] {
+            background-color: var(--bg-color) !important; /* Match page bg to hide scrolling content */
             padding-bottom: 1rem !important;
+            padding-top: 1rem !important;
         }
         div[data-testid="stChatInput"] textarea { 
             background-color: #333333 !important; 
@@ -232,7 +235,7 @@ def render_sidebar(data_engine, ai_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.2
+                Accounts OS v4.3
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
