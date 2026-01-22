@@ -36,6 +36,11 @@ def inject_custom_css():
         p, div, span { color: var(--text-white); }
         [data-testid="stSidebar"] { background-color: var(--accent-black); border-right: 1px solid #111; }
         
+        /* REDUCE SIDEBAR TOP PADDING TO FIT LOGO BETTER */
+        section[data-testid="stSidebar"] > div > div:first-child {
+            padding-top: 20px;
+        }
+
         /* FILE UPLOADER */
         [data-testid="stFileUploader"] { padding: 1rem; background: var(--accent-black); border: 1px solid #444; border-radius: 4px; }
         [data-testid="stFileUploader"] div { color: var(--text-gray) !important; }
@@ -156,26 +161,35 @@ class AIEngine:
 
 # --- 4. FRONTEND COMPONENTS ---
 
+def find_logo_file():
+    """Recursively searches for logo.png or similar files in the directory."""
+    target_names = ["logo.png", "logo.jpg", "logo.jpeg", "capture.png"]
+    
+    # 1. Check known specific paths first (Fastest)
+    known_paths = [
+        "assessts/logo.png", "assets/logo.png", "logo.png", 
+        "assessts/QR_logo, long, white.png", "assets/QR_logo, long, white.png"
+    ]
+    for p in known_paths:
+        if os.path.exists(p):
+            return p
+            
+    # 2. Deep Search (If above fails)
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.lower() in target_names or ("qr_logo" in file.lower() and file.endswith(".png")):
+                return os.path.join(root, file)
+    return None
+
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # --- LOGO SECTION (UPDATED FOR logo.png) ---
-        possible_paths = [
-            "assessts/logo.png",                  # 1. Your requested file in your folder
-            "logo.png",                           # 2. Root fallback
-            "assessts/QR_logo, long, white.png",  # 3. Screenshot file fallback
-            "assets/logo.png"                     # 4. Standard folder fallback
-        ]
-        
-        logo_path = None
-        for p in possible_paths:
-            if os.path.exists(p):
-                logo_path = p
-                break
+        # --- LOGO SECTION (AUTO-DISCOVERY) ---
+        logo_path = find_logo_file()
         
         if logo_path:
             st.image(logo_path, use_container_width=True)
         else:
-            # Fallback Text if image fails to load
+            # Fallback if absolutely no logo is found
             st.markdown("""
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
             """, unsafe_allow_html=True)
