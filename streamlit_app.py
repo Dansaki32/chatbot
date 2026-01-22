@@ -4,6 +4,7 @@ import google.generativeai as genai
 import sqlite3
 import time
 import plotly.express as px
+import os  # <--- Essential for finding your local file
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -14,133 +15,54 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. THE VISUAL CORE (CSS - REDESIGNED) ---
+# --- 2. VISUAL CORE (The Dark/Grey Theme) ---
 def inject_custom_css():
     st.markdown("""
     <style>
-        /* IMPORTS */
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
 
-        /* ROOT VARIABLES - THE NEW THEME */
         :root {
-            --bg-color: #262626;        /* The Main Dark Grey Background */
-            --accent-black: #000000;    /* The Black Accents */
-            --text-white: #FFFFFF;      /* Pure White Text */
-            --text-gray: #CCCCCC;       /* Light Grey for subtitles */
-            --highlight-red: #D31515;   /* QR Red */
-            --input-bg: #333333;        /* Lighter Grey for Input Box */
+            --bg-color: #262626;
+            --accent-black: #000000;
+            --text-white: #FFFFFF;
+            --text-gray: #CCCCCC;
+            --highlight-red: #D31515;
+            --input-bg: #333333;
         }
 
-        /* GLOBAL RESET */
-        .stApp {
-            background-color: var(--bg-color);
-            color: var(--text-white);
-            font-family: 'Inter', sans-serif;
-        }
+        .stApp { background-color: var(--bg-color); color: var(--text-white); font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { color: var(--text-white) !important; font-family: 'Inter', sans-serif; letter-spacing: -0.5px; }
+        p, div, span { color: var(--text-white); }
+        [data-testid="stSidebar"] { background-color: var(--accent-black); border-right: 1px solid #111; }
         
-        h1, h2, h3, h4, h5, h6 { 
-            color: var(--text-white) !important;
-            font-family: 'Inter', sans-serif; 
-            letter-spacing: -0.5px; 
-        }
-        
-        p, div, span {
-            color: var(--text-white);
-        }
-
-        /* SIDEBAR - BLACK ACCENT */
-        [data-testid="stSidebar"] {
-            background-color: var(--accent-black);
-            border-right: 1px solid #111;
-        }
-        
-        /* FILE UPLOADER - BLACK ACCENT */
-        [data-testid="stFileUploader"] {
-            padding: 1rem;
-            background: var(--accent-black); /* Black Box */
-            border: 1px solid #444;
-            border-radius: 4px;
-        }
+        /* FILE UPLOADER */
+        [data-testid="stFileUploader"] { padding: 1rem; background: var(--accent-black); border: 1px solid #444; border-radius: 4px; }
         [data-testid="stFileUploader"] div { color: var(--text-gray) !important; }
-        [data-testid="stFileUploader"] button {
-            background-color: var(--highlight-red) !important;
-            color: white !important;
-            border: none;
-            font-weight: bold;
-        }
+        [data-testid="stFileUploader"] button { background-color: var(--highlight-red) !important; color: white !important; border: none; font-weight: bold; }
 
-        /* CHAT INPUT - FIXED (No more weird black hole) */
-        .stChatInput {
-            background: transparent;
-            padding-bottom: 2rem;
-        }
-        .stChatInput textarea {
-            background-color: var(--input-bg) !important; /* Dark Grey Input */
-            color: #FFFFFF !important; /* White Typing */
-            border: 1px solid #555 !important;
-            border-radius: 8px !important;
-            font-family: 'Inter', sans-serif !important;
-        }
-        .stChatInput textarea:focus {
-            border-color: var(--highlight-red) !important;
-            box-shadow: 0 0 0 1px var(--highlight-red) !important;
-        }
+        /* INPUT & CHAT */
+        .stChatInput { background: transparent; padding-bottom: 2rem; }
+        .stChatInput textarea { background-color: var(--input-bg) !important; color: #FFFFFF !important; border: 1px solid #555 !important; border-radius: 8px !important; font-family: 'Inter', sans-serif !important; }
+        .stChatInput textarea:focus { border-color: var(--highlight-red) !important; box-shadow: 0 0 0 1px var(--highlight-red) !important; }
+        
+        [data-testid="stChatMessage"] { background-color: transparent; border-bottom: 1px solid #333; }
+        [data-testid="stChatMessage"] .st-emotion-cache-1p1m4ay { background-color: var(--highlight-red); }
 
-        /* CHAT MESSAGES */
-        [data-testid="stChatMessage"] {
-            background-color: transparent;
-            border-bottom: 1px solid #333;
-        }
-        /* AI Avatar */
-        [data-testid="stChatMessage"] .st-emotion-cache-1p1m4ay {
-            background-color: var(--highlight-red);
-        }
-
-        /* CUSTOM METRICS CARDS - BLACK ACCENTS */
-        .metric-card {
-            background: var(--accent-black); /* Black Card */
-            border: 1px solid #333; /* Subtle Border */
-            padding: 20px;
-            border-radius: 6px;
-            height: 100%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .metric-value { 
-            font-size: 2rem; 
-            font-weight: 700; 
-            color: var(--text-white); 
-        }
-        .metric-label { 
-            font-size: 0.85rem; 
-            color: var(--text-gray); /* Lighter grey */
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        .metric-desc {
-            font-size: 0.8rem;
-            color: #888;
-        }
+        /* CARDS */
+        .metric-card { background: var(--accent-black); border: 1px solid #333; padding: 20px; border-radius: 6px; height: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .metric-value { font-size: 2rem; font-weight: 700; color: var(--text-white); }
+        .metric-label { font-size: 0.85rem; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; }
+        .metric-desc { font-size: 0.8rem; color: #888; }
 
         /* TABS */
-        button[data-baseweb="tab"] {
-            background-color: transparent !important;
-            color: var(--text-gray) !important;
-        }
-        button[data-baseweb="tab"][aria-selected="true"] {
-            color: var(--text-white) !important;
-            border-bottom-color: var(--highlight-red) !important;
-        }
+        button[data-baseweb="tab"] { background-color: transparent !important; color: var(--text-gray) !important; }
+        button[data-baseweb="tab"][aria-selected="true"] { color: var(--text-white) !important; border-bottom-color: var(--highlight-red) !important; }
 
-        /* HIDE STREAMLIT CHROME */
-        #MainMenu {visibility: hidden;}
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
+        #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. BACKEND LOGIC (Database & AI) ---
+# --- 3. BACKEND LOGIC ---
 
 class DataEngine:
     def __init__(self, db_name='strategy_core.db'):
@@ -157,6 +79,7 @@ class DataEngine:
                          (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), filename, status, row_count))
 
     def ingest_data(self, df, filename):
+        # Sanitize table name
         table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
         with self.get_connection() as conn:
             df.to_sql(table_name, conn, if_exists='replace', index=False)
@@ -191,11 +114,7 @@ class AIEngine:
 
     def validate_data(self, df_head):
         if not self.active: return "UNKNOWN (API OFF)"
-        prompt = f"""
-        Analyze this data schema for a Strategy Engine.
-        Data: {df_head}
-        Task: Return a 1-sentence summary of what this data represents.
-        """
+        prompt = f"Analyze this data schema: {df_head}. Task: Return 1-sentence summary."
         try:
             response = self.model.generate_content(prompt)
             return response.text.strip()
@@ -204,7 +123,7 @@ class AIEngine:
 
     def stream_response(self, user_query, history, db_context):
         if not self.active:
-            yield "SYSTEM ERROR: API KEY MISSING. PLEASE CONFIGURE SECRETS."
+            yield "SYSTEM ERROR: API KEY MISSING."
             return
 
         system_prompt = f"""
@@ -213,7 +132,6 @@ class AIEngine:
         CONTEXT: The user has access to the following secure databases:
         {db_context}
         """
-        
         full_query = f"{system_prompt}\n\nUSER QUERY: {user_query}"
         
         try:
@@ -227,26 +145,26 @@ class AIEngine:
 
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # Logo Area
         st.markdown("""
             <div style='margin-bottom: 20px;'>
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
-                <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top:5px;'>STRATEGY OS v3.0</div>
+                <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top:5px;'>STRATEGY OS v3.2</div>
             </div>
         """, unsafe_allow_html=True)
 
         st.markdown("---")
         
-        # Upload Section
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("DROP FILE", type=['csv'], label_visibility="collapsed")
+        # Allows Drag & Drop override
+        uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv'], label_visibility="collapsed")
         
         if uploaded_file:
             if "last_upload" not in st.session_state or st.session_state.last_upload != uploaded_file.name:
-                df = pd.read_csv(uploaded_file)
+                sep = '\t' if uploaded_file.name.endswith('.tsv') else ','
+                df = pd.read_csv(uploaded_file, sep=sep)
+                
                 validation_msg = ai_engine.validate_data(df.head(3).to_string())
-                table_name = data_engine.ingest_data(df, uploaded_file.name)
-                data_engine.log_upload(uploaded_file.name, "SUCCESS", len(df))
+                data_engine.ingest_data(df, uploaded_file.name)
                 
                 st.session_state.last_upload = uploaded_file.name
                 st.session_state.active_df = df
@@ -255,31 +173,35 @@ def render_sidebar(data_engine, ai_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Controls
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
         if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
 
 def render_zero_state():
+    # Check if we have data to determine status
+    status_text = "ONLINE"
+    context_text = "READY" if "active_df" in st.session_state else "WAITING"
+    context_color = "#4CAF50" if "active_df" in st.session_state else "#FFF"
+    
     st.markdown("<br><br>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     
     with c1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">System Status</div>
-            <div class="metric-value" style="color:#4CAF50;">ONLINE</div>
+            <div class="metric-value" style="color:#4CAF50;">{status_text}</div>
             <div class="metric-desc">All neural modules active.</div>
         </div>
         """, unsafe_allow_html=True)
         
     with c2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">Data Context</div>
-            <div class="metric-value" style="color:#FFF;">READY</div>
-            <div class="metric-desc">Awaiting vector inputs.</div>
+            <div class="metric-value" style="color:{context_color};">{context_text}</div>
+            <div class="metric-desc">{'Local vectors loaded.' if context_text == 'READY' else 'Awaiting vector inputs.'}</div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -294,32 +216,6 @@ def render_zero_state():
         
     st.markdown("<br><br><div style='text-align:center; color:#CCC; font-family:JetBrains Mono;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
 
-def render_viz_tab():
-    if "active_df" in st.session_state:
-        df = st.session_state.active_df
-        st.markdown("### DATA RECONNAISSANCE")
-        
-        num_cols = df.select_dtypes(include=['float64', 'int64']).columns
-        
-        if len(num_cols) > 0:
-            c1, c2 = st.columns(2)
-            with c1:
-                # Plotly with Transparency for new background
-                fig = px.bar(df, x=df.columns[0], y=num_cols[0], template="plotly_dark", title=f"{num_cols[0]} Analysis")
-                fig.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)", # Transparent to show grey bg
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#E0E0E0"
-                )
-                fig.update_traces(marker_color='#D31515')
-                st.plotly_chart(fig, use_container_width=True)
-            with c2:
-                st.dataframe(df.head(10), use_container_width=True)
-        else:
-            st.dataframe(df, use_container_width=True)
-    else:
-        st.info("NO DATA LOADED. UPLOAD A FILE TO INITIALIZE VISUALS.")
-
 # --- 5. MAIN EXECUTION ---
 
 def main():
@@ -328,8 +224,30 @@ def main():
     data_engine = DataEngine()
     ai_engine = AIEngine()
     
+    # Session State Init
     if "messages" not in st.session_state:
         st.session_state.messages = []
+
+    # --- NEW: AUTO-DETECT LOCAL TABLE.TSV ---
+    if "local_loaded" not in st.session_state:
+        # Check current directory for table.tsv
+        local_file = "table.tsv"
+        if os.path.exists(local_file):
+            try:
+                # Read TSV
+                df_local = pd.read_csv(local_file, sep='\t')
+                
+                # Ingest quietly
+                data_engine.ingest_data(df_local, local_file)
+                st.session_state.active_df = df_local
+                st.session_state.local_loaded = True
+                
+                # Verify schema with AI (optional, non-blocking)
+                st.toast(f"AUTO-MOUNT: {local_file} DETECTED & LOADED", icon="📂")
+            except Exception as e:
+                st.toast(f"AUTO-MOUNT ERROR: {e}", icon="⚠️")
+        else:
+            st.session_state.local_loaded = False
 
     render_sidebar(data_engine, ai_engine)
 
@@ -378,7 +296,26 @@ def main():
             st.session_state.messages.append({"role": "assistant", "content": full_response})
 
     with tab2:
-        render_viz_tab()
+        if "active_df" in st.session_state:
+            df = st.session_state.active_df
+            st.markdown("### DATA RECONNAISSANCE")
+            
+            # Simple numeric check for plotting
+            num_cols = df.select_dtypes(include=['float64', 'int64']).columns
+            
+            if len(num_cols) > 0:
+                c1, c2 = st.columns(2)
+                with c1:
+                    fig = px.bar(df, x=df.columns[0], y=num_cols[0], template="plotly_dark")
+                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#E0E0E0")
+                    fig.update_traces(marker_color='#D31515')
+                    st.plotly_chart(fig, use_container_width=True)
+                with c2:
+                    st.dataframe(df, use_container_width=True)
+            else:
+                st.dataframe(df, use_container_width=True)
+        else:
+            st.info("NO DATA LOADED.")
 
 if __name__ == "__main__":
     main()
