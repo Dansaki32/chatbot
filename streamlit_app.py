@@ -174,7 +174,7 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("<br>", unsafe_allow_html=True)
         
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
-        if st.button("CLEAR SESSION CACHE"):
+        if st.button("<div style='color:#D31515; font-weight:bold;'>02 // SESSION CACHE</div>"):
             st.session_state.messages = []
             st.rerun()
 
