@@ -330,7 +330,7 @@ def main():
 
     with tab1:
         st.markdown("""
-            <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
+            <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 20px;'>
                 <div><span class='active-session-text'>// ACTIVE SESSION</span></div>
                 <div style='font-family: "JetBrains Mono"; font-size:0.7rem; color:#555;'>{timestamp}</div>
             </div>
