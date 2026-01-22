@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(
-    page_title="QR_ STRATEGY OS",
+    page_title="QR_ Accounts OS",
     page_icon="🔴",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -208,9 +208,9 @@ def render_zero_state():
     with c3:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Security Level</div>
-            <div class="metric-value" style="color:#D31515;">ALPHA</div>
-            <div class="metric-desc">Senior Director authorization.</div>
+            <div class="metric-label">Personality level</div>
+            <div class="metric-value" style="color:#D31515;">Senior Director</div>
+            <div class="metric-desc">ALpha.</div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -251,7 +251,7 @@ def main():
 
     render_sidebar(data_engine, ai_engine)
 
-    tab1, tab2 = st.tabs(["// STRATEGY_CHAT", "// DATA_RECON"])
+    tab1, tab2 = st.tabs(["// Account_CHAT", "// DATA_RECON"])
 
     with tab1:
         st.markdown("""
