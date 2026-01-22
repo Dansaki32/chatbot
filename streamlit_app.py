@@ -139,7 +139,7 @@ def inject_custom_css():
         }
         .metric-value { 
             font-family: var(--font-display);
-            font-size: 2.2rem; 
+            font-size: 1.2rem; 
             color: var(--text-white); 
         }
         .metric-desc { 
