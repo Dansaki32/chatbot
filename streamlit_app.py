@@ -29,6 +29,7 @@ def inject_custom_css():
             --bg-color: #1a1a1a;
             --sidebar-bg: #000000;
             --accent-red: #D31515;
+            --accent-green: #4CAF50;
             --text-white: #FFFFFF;
             --font-display: 'Dolce Vita Bold', 'Roboto', sans-serif;
             --font-body: 'Roboto', sans-serif;
@@ -40,13 +41,23 @@ def inject_custom_css():
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
         .block-container { padding-top: 2rem !important; padding-bottom: 8rem !important; }
         
+        /* HIDE STREAMLIT HEADER STRIP (The White Bar) */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+        
         h1, h2, h3 { font-family: var(--font-display) !important; letter-spacing: 2px !important; text-transform: uppercase !important; }
         p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* SIDEBAR */
+        /* SIDEBAR LOGO ADJUSTMENT */
         [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid #333; }
         section[data-testid="stSidebar"] > div { padding-top: 0rem !important; }
-        [data-testid="stSidebar"] img { margin-top: -75px !important; margin-bottom: 20px !important; }
+        
+        /* ADJUSTED MARGIN: Moves logo slightly down from the extreme top */
+        [data-testid="stSidebar"] img { 
+            margin-top: -50px !important; 
+            margin-bottom: 20px !important; 
+        }
 
         /* FILE UPLOADER */
         [data-testid="stFileUploader"] { background-color: #0A0A0A; border: 1px solid #333; padding: 15px; }
@@ -193,7 +204,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.0</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.1</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
