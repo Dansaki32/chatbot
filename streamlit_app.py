@@ -274,7 +274,7 @@ def render_sidebar(data_engine, ai_engine):
         """, unsafe_allow_html=True)
 
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 01 // DATA INGESTION
             </div>
         """, unsafe_allow_html=True)
@@ -293,7 +293,7 @@ def render_sidebar(data_engine, ai_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 02 // SYSTEM CONTROLS
             </div>
         """, unsafe_allow_html=True)
