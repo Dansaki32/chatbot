@@ -41,23 +41,16 @@ def inject_custom_css():
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
         .block-container { padding-top: 2rem !important; padding-bottom: 8rem !important; }
         
-        /* HIDE STREAMLIT HEADER STRIP (The White Bar) */
-        header[data-testid="stHeader"] {
-            display: none !important;
-        }
+        /* HIDE HEADER */
+        header[data-testid="stHeader"] { display: none !important; }
         
         h1, h2, h3 { font-family: var(--font-display) !important; letter-spacing: 2px !important; text-transform: uppercase !important; }
         p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* SIDEBAR LOGO ADJUSTMENT */
+        /* SIDEBAR */
         [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid #333; }
         section[data-testid="stSidebar"] > div { padding-top: 0rem !important; }
-        
-        /* ADJUSTED MARGIN: Moves logo slightly down from the extreme top */
-        [data-testid="stSidebar"] img { 
-            margin-top: -50px !important; 
-            margin-bottom: 20px !important; 
-        }
+        [data-testid="stSidebar"] img { margin-top: -50px !important; margin-bottom: 20px !important; }
 
         /* FILE UPLOADER */
         [data-testid="stFileUploader"] { background-color: #0A0A0A; border: 1px solid #333; padding: 15px; }
@@ -95,12 +88,10 @@ def inject_custom_css():
 STORAGE_DIR = "knowledge_base"
 
 def init_storage():
-    """Ensures the local storage folder exists."""
     if not os.path.exists(STORAGE_DIR):
         os.makedirs(STORAGE_DIR)
 
 def save_uploaded_file(uploaded_file):
-    """Saves a file permanently to the disk."""
     try:
         file_path = os.path.join(STORAGE_DIR, uploaded_file.name)
         with open(file_path, "wb") as f:
@@ -110,39 +101,31 @@ def save_uploaded_file(uploaded_file):
         return None
 
 class KnowledgeEngine:
-    """Reads ALL files in the knowledge_base folder to build a mega-context."""
-    
     def get_all_context(self):
         context = ""
-        files = [f for f in os.listdir(STORAGE_DIR) if os.path.isfile(os.path.join(STORAGE_DIR, f))]
+        if not os.path.exists(STORAGE_DIR): return "NO DATA."
         
-        if not files:
-            return "NO KNOWLEDGE BASE FILES FOUND. PLEASE UPLOAD DATA."
+        files = [f for f in os.listdir(STORAGE_DIR) if os.path.isfile(os.path.join(STORAGE_DIR, f))]
+        if not files: return "NO KNOWLEDGE BASE FILES FOUND. PLEASE UPLOAD DATA."
         
         context += f"/// SYSTEM KNOWLEDGE BASE ({len(files)} FILES LOADED) ///\n\n"
         
         for filename in files:
             file_path = os.path.join(STORAGE_DIR, filename)
             context += f"=== SOURCE FILE: {filename} ===\n"
-            
             try:
-                # PROCESS PDF
                 if filename.endswith(".pdf"):
                     reader = pypdf.PdfReader(file_path)
                     text = ""
                     for page in reader.pages:
                         text += page.extract_text() + "\n"
-                    context += f"{text[:10000]} ... [TRUNCATED IF TOO LONG]\n\n"
-                
-                # PROCESS CSV/TSV
+                    context += f"{text[:15000]} ... [TRUNCATED]\n\n"
                 elif filename.endswith(".csv") or filename.endswith(".tsv"):
                     sep = '\t' if filename.endswith('.tsv') else ','
                     df = pd.read_csv(file_path, sep=sep)
                     context += df.to_string(index=False) + "\n\n"
-                    
             except Exception as e:
                 context += f"[ERROR READING FILE: {str(e)}]\n\n"
-                
         return context
 
 class AIEngine:
@@ -156,15 +139,12 @@ class AIEngine:
 
     def stream_response(self, user_query, db_context):
         if not self.active: yield "SYSTEM ERROR: API KEY MISSING."; return
-        
         system_prompt = f"""
         ROLE: You are QR_ ACCOUNTS OS, an elite Strategy Operating System.
         TASK: Answer queries based STRICTLY on the knowledge base provided below.
-        
         [KNOWLEDGE BASE]
         {db_context}
         """
-        
         try:
             response = self.model.generate_content(f"{system_prompt}\n\nUSER QUERY: {user_query}", stream=True)
             for chunk in response: yield chunk.text
@@ -172,18 +152,15 @@ class AIEngine:
 
     def generate_one_pager(self, db_context):
         if not self.active: return "SYSTEM ERROR: API KEY MISSING."
-        
         prompt = f"""
         ROLE: Senior Strategy Director.
         TASK: Create a consolidated "Executive 1-Pager" based on ALL the data provided below.
-        
         FORMAT:
-        1. **Executive Summary** (3-4 sentences high level)
-        2. **Key Account Risks** (Bullet points)
-        3. **Strategic Opportunities** (Bullet points)
-        4. **Financial Health / Metrics** (If available in data)
-        5. **Next 90 Days** (Action plan)
-        
+        1. **Executive Summary**
+        2. **Key Account Risks**
+        3. **Strategic Opportunities**
+        4. **Financial Health / Metrics**
+        5. **Next 90 Days**
         [DATA SOURCE]
         {db_context}
         """
@@ -204,24 +181,35 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.1</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.2</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
-        # UPLOAD
+        # UPLOAD - FIXED TO PREVENT FLICKERING LOOP
         st.markdown("<div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:5px;'>INGEST KNOWLEDGE</div>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Upload", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed")
+        
+        # We use a key that changes to force the widget to reset after upload
+        if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
+        
+        uploaded_file = st.file_uploader(
+            "Upload", 
+            type=['csv', 'tsv', 'pdf'], 
+            label_visibility="collapsed",
+            key=f"uploader_{st.session_state.uploader_key}"
+        )
         
         if uploaded_file:
             save_path = save_uploaded_file(uploaded_file)
             if save_path:
                 st.toast(f"SAVED TO CORE: {uploaded_file.name}", icon="💾")
-                time.sleep(1) # Give it a sec
-                st.rerun() # Refresh so the new file is read into context
+                # Increment key to reset uploader on next run
+                st.session_state.uploader_key += 1
+                time.sleep(1)
+                st.rerun()
 
         # FILE LIST
         st.markdown("<br><div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:5px;'>ACTIVE DATASETS</div>", unsafe_allow_html=True)
-        files = os.listdir(STORAGE_DIR)
+        files = os.listdir(STORAGE_DIR) if os.path.exists(STORAGE_DIR) else []
         if files:
             for f in files:
                 st.markdown(f"<div style='color:#888; font-size:0.8rem; border-left:2px solid #D31515; padding-left:10px; margin-bottom:5px;'>{f}</div>", unsafe_allow_html=True)
@@ -230,21 +218,17 @@ def render_sidebar(knowledge_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("WIPE MEMORY"):
-            for f in files:
-                os.remove(os.path.join(STORAGE_DIR, f))
+            for f in files: os.remove(os.path.join(STORAGE_DIR, f))
             st.rerun()
 
 def render_metrics():
-    # Count files
-    file_count = len(os.listdir(STORAGE_DIR))
+    file_count = len(os.listdir(STORAGE_DIR)) if os.path.exists(STORAGE_DIR) else 0
     c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f"""<div class="metric-card"><div class="metric-label">System Status</div><div class="metric-value" style="color:#4CAF50;">ONLINE</div><div class="metric-desc">Neural Engine Active</div></div>""", unsafe_allow_html=True)
-    with c2:
+    with c1: st.markdown(f"""<div class="metric-card"><div class="metric-label">System Status</div><div class="metric-value" style="color:#4CAF50;">ONLINE</div><div class="metric-desc">Neural Engine Active</div></div>""", unsafe_allow_html=True)
+    with c2: 
         color = "#4CAF50" if file_count > 0 else "#D31515"
         st.markdown(f"""<div class="metric-card"><div class="metric-label">Knowledge Base</div><div class="metric-value" style="color:{color};">{file_count} FILES</div><div class="metric-desc">Vectors Loaded</div></div>""", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"""<div class="metric-card"><div class="metric-label">Personality</div><div class="metric-value" style="color:#4CAF50;">DIRECTOR</div><div class="metric-desc">Strategic Mode</div></div>""", unsafe_allow_html=True)
+    with c3: st.markdown(f"""<div class="metric-card"><div class="metric-label">Personality</div><div class="metric-value" style="color:#4CAF50;">DIRECTOR</div><div class="metric-desc">Strategic Mode</div></div>""", unsafe_allow_html=True)
 
 # --- 5. MAIN EXECUTION ---
 
@@ -259,15 +243,12 @@ def main():
 
     render_sidebar(knowledge_engine)
 
-    # TABS
     tab1, tab2, tab3 = st.tabs(["// ACCOUNTS_CHAT", "// EXEC_1_PAGER", "// DATA_RECON"])
 
-    # --- TAB 1: CHAT ---
     with tab1:
         st.markdown(f"<div style='margin-bottom:20px;'><span class='active-session-text'>// ACTIVE SESSION: {datetime.now().strftime('%H:%M')}</span></div>", unsafe_allow_html=True)
         render_metrics()
         
-        # Display Messages
         for message in st.session_state.messages:
             with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🔴"):
                 st.markdown(message["content"])
@@ -279,9 +260,7 @@ def main():
             with st.chat_message("assistant", avatar="🔴"):
                 response_placeholder = st.empty()
                 full_response = ""
-                # Get fresh context from disk
                 context = knowledge_engine.get_all_context()
-                
                 try:
                     for chunk in ai_engine.stream_response(prompt, context):
                         full_response += chunk
@@ -292,28 +271,21 @@ def main():
                     response_placeholder.markdown(f"**ERROR:** {str(e)}")
             st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-    # --- TAB 2: EXEC 1 PAGER ---
     with tab2:
         st.markdown("### // EXECUTIVE ONE-PAGER GENERATOR")
-        st.markdown("Generates a consolidated strategic view based on **all** currently uploaded files.")
-        
         if st.button("GENERATE 1-PAGER"):
             with st.spinner("SYNTHESIZING KNOWLEDGE BASE..."):
                 context = knowledge_engine.get_all_context()
                 summary = ai_engine.generate_one_pager(context)
                 st.markdown("---")
                 st.markdown(summary)
-        else:
-            st.info("Click generate to fuse all uploaded data into a single strategic document.")
 
-    # --- TAB 3: DATA RECON ---
     with tab3:
         st.markdown("### // RAW DATA INSPECTION")
-        files = os.listdir(STORAGE_DIR)
+        files = os.listdir(STORAGE_DIR) if os.path.exists(STORAGE_DIR) else []
         if files:
             selected_file = st.selectbox("SELECT FILE TO INSPECT", files)
             file_path = os.path.join(STORAGE_DIR, selected_file)
-            
             if selected_file.endswith(".csv") or selected_file.endswith(".tsv"):
                 sep = '\t' if selected_file.endswith('.tsv') else ','
                 df = pd.read_csv(file_path, sep=sep)
