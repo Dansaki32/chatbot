@@ -195,9 +195,9 @@ def render_zero_state():
     # Check if we have data to determine status
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
-    context_color = "#4CAF50" if "active_df" in st.session_state else "#FFF"
+    context_color = "" if "active_df" in st.session_state else "#FFF"
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br><br#4CAF50>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     
     with c1:
@@ -222,7 +222,7 @@ def render_zero_state():
         st.markdown("""
         <div class="metric-card">
             <div class="metric-label">Personality type</div>
-            <div class="metric-value" style="color:#D31515;">Senior Director</div>
+            <div class="metric-value" style="color:#4CAF50;">Senior Director</div>
             <div class="metric-desc">Active.</div>
         </div>
         """, unsafe_allow_html=True)
