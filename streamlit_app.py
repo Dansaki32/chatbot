@@ -45,22 +45,29 @@ def inject_custom_css():
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
         
         /* FIX: REDUCE TOP PADDING FOR MAIN PAGE */
-        .block-container { padding-top: 2rem !important; padding-bottom: 10rem !important; }
+        .block-container { padding-top: 2rem !important; padding-bottom: 5rem !important; }
         
         h1, h2, h3 { font-family: var(--font-display) !important; letter-spacing: 1px; text-transform: uppercase; }
         p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* 4. SIDEBAR - LOGO FIX (Top Left) */
-        [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid #333; }
-        
-        /* This removes the default gap at the top of the sidebar */
-        section[data-testid="stSidebar"] > div:first-child {
-            padding-top: 0px !important; 
+        /* 4. SIDEBAR - LOGO FIX (ABSOLUTE TOP) */
+        [data-testid="stSidebar"] { 
+            background-color: var(--sidebar-bg); 
+            border-right: 1px solid #333; 
         }
-        /* Further adjust the image container margin */
+        
+        /* AGGRESSIVELY REMOVE ALL TOP PADDING FROM SIDEBAR */
+        section[data-testid="stSidebar"] > div {
+            padding-top: 1rem !important; /* Slight buffer from top edge */
+        }
+        div[data-testid="stSidebarUserContent"] {
+            padding-top: 0px !important;
+        }
+        
+        /* Ensure image has no extra margin */
         [data-testid="stSidebar"] img {
-            margin-top: 20px;
-            margin-bottom: 0px;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
         }
 
         /* 5. FILE UPLOADER - TEXT VISIBILITY FIX */
@@ -123,6 +130,9 @@ def inject_custom_css():
         .metric-desc { font-family: var(--font-body); font-size: 0.75rem; color: #666; margin-top: 5px; }
 
         /* 8. CHAT INPUT STABILITY */
+        div[data-testid="stChatInput"] {
+            padding-bottom: 1rem !important;
+        }
         div[data-testid="stChatInput"] textarea { 
             background-color: #333333 !important; 
             color: #FFFFFF !important; 
@@ -222,7 +232,7 @@ def render_sidebar(data_engine, ai_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.1
+                Accounts OS v4.2
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
