@@ -221,7 +221,7 @@ def render_zero_state():
     with c3:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Personality typeSecurity Level</div>
+            <div class="metric-label">Personality type</div>
             <div class="metric-value" style="color:#D31515;">Senior Director</div>
             <div class="metric-desc">Active.</div>
         </div>
