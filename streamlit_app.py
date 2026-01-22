@@ -55,10 +55,16 @@ def inject_custom_css():
             --font-mono: 'JetBrains Mono', monospace;
         }
 
-        /* 4. GLOBAL RESETS */
+        /* 4. GLOBAL RESETS & LAYOUT TWEAKS */
         .stApp { 
             background-color: var(--bg-color); 
             font-family: var(--font-body);
+        }
+        
+        /* REDUCE DEFAULT TOP PADDING to fix the big gap */
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
         }
         
         h1, h2, h3 { 
@@ -88,9 +94,8 @@ def inject_custom_css():
         [data-testid="stFileUploader"] section {
             background-color: #111111 !important;
         }
-        /* Target the dropzone text - Force White/Light Grey */
         [data-testid="stFileUploader"] div {
-            color: #E0E0E0 !important; /* Made brighter for visibility */
+            color: #E0E0E0 !important;
             font-family: var(--font-body);
         }
         [data-testid="stFileUploader"] button { 
@@ -101,27 +106,27 @@ def inject_custom_css():
             letter-spacing: 1px;
         }
 
-        /* SIDEBAR BUTTONS (CLEAR CACHE) */
+        /* SIDEBAR BUTTONS */
         [data-testid="stSidebar"] .stButton button {
-            background-color: #000000 !important; /* Black Background */
-            color: var(--accent-red) !important;   /* Red Text */
-            border: 1px solid var(--accent-red) !important; /* Red Border */
+            background-color: #000000 !important;
+            color: var(--accent-red) !important;
+            border: 1px solid var(--accent-red) !important;
             font-family: var(--font-display) !important;
             letter-spacing: 1px;
             transition: all 0.3s ease;
             text-transform: uppercase;
         }
         [data-testid="stSidebar"] .stButton button:hover {
-            background-color: var(--accent-red) !important; /* Red Fill on Hover */
-            color: #FFFFFF !important; /* White Text on Hover */
+            background-color: var(--accent-red) !important;
+            color: #FFFFFF !important;
             box-shadow: 0 0 10px rgba(211, 21, 21, 0.4);
         }
 
-        /* 6. METRIC CARDS */
+        /* 6. METRIC CARDS (UPDATED SIZE) */
         .metric-card { 
             background: #000000; 
             border: 1px solid #222; 
-            padding: 25px; 
+            padding: 20px; 
             border-radius: 4px; 
             height: 100%; 
             transition: all 0.3s ease;
@@ -135,49 +140,37 @@ def inject_custom_css():
             font-size: 0.8rem; 
             color: var(--text-gray); 
             letter-spacing: 2px; 
-            margin-bottom: 8px; 
+            margin-bottom: 5px; 
         }
         .metric-value { 
             font-family: var(--font-display);
-            font-size: 1.2rem; 
+            font-size: 1.5rem; /* REDUCED FROM 2.2rem */
             color: var(--text-white); 
         }
         .metric-desc { 
             font-family: var(--font-body);
-            font-size: 0.8rem; 
+            font-size: 0.75rem; 
             color: #666; 
             margin-top: 5px;
         }
 
-        /* 7. CHAT INPUT FIX - FORCE DARK BACKGROUND */
-        /* This targets the container */
-        div[data-testid="stChatInput"] {
-            background-color: transparent !important;
-        }
-        
-        /* This targets the actual typing area */
+        /* 7. CHAT INPUT */
         div[data-testid="stChatInput"] textarea { 
-            background-color: #333333 !important; /* Dark Grey Background */
-            color: #FFFFFF !important;            /* White Text */
-            caret-color: #D31515 !important;      /* Red Cursor */
+            background-color: #333333 !important; 
+            color: #FFFFFF !important; 
+            caret-color: #D31515 !important;
             border: 1px solid #555 !important; 
             font-family: var(--font-body) !important;
         }
-        
-        /* Focus state */
         div[data-testid="stChatInput"] textarea:focus {
             border-color: var(--accent-red) !important;
-            background-color: #333333 !important; /* Ensure it stays dark on focus */
-            color: #FFFFFF !important;
             box-shadow: 0 0 0 1px var(--accent-red) !important;
         }
-        
-        /* Placeholder Text */
         div[data-testid="stChatInput"] textarea::placeholder {
             color: #888888 !important;
         }
 
-        /* 8. PULSING ANIMATION FOR "ACTIVE SESSION" */
+        /* 8. ACTIVE SESSION PULSE */
         @keyframes pulse-red {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -278,8 +271,6 @@ def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
         # --- LOGO & HEADER ---
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Priority search for logo
         possible_paths = [
             os.path.join(script_dir, "logo.png"),              
             os.path.join(script_dir, "assets", "logo.png"),    
@@ -297,7 +288,6 @@ def render_sidebar(data_engine, ai_engine):
         else:
             st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
-        # Updated Subtitle
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
                 Accounts OS v3.9
@@ -305,8 +295,6 @@ def render_sidebar(data_engine, ai_engine):
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
 
-        # Upload Section
-        # CHANGED: Font color to WHITE as requested
         st.markdown("""
             <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 01 // DATA INGESTION
@@ -330,8 +318,6 @@ def render_sidebar(data_engine, ai_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Controls Section
-        # CHANGED: Font color to WHITE as requested
         st.markdown("""
             <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 02 // SYSTEM CONTROLS
@@ -347,11 +333,10 @@ def render_zero_state():
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
     
-    # Colors
     green = "#4CAF50"
     red = "#D31515"
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # REMOVED <br><br> to tighten the gap
     c1, c2, c3 = st.columns(3)
     
     with c1:
@@ -364,7 +349,6 @@ def render_zero_state():
         """, unsafe_allow_html=True)
         
     with c2:
-        # Context is green if ready, red if waiting
         ctx_color = green if context_text == "READY" else red
         st.markdown(f"""
         <div class="metric-card">
@@ -418,7 +402,6 @@ def main():
     tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
 
     with tab1:
-        # Header with pulsing active session
         st.markdown("""
             <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
                 <div>
