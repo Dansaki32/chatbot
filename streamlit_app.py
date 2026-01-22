@@ -310,7 +310,7 @@ def main():
             st.markdown("### DATA RECONNAISSANCE")
             
             num_cols = df.select_dtypes(include=['float64', 'int64']).columns
-            
+            32
             if len(num_cols) > 0:
                 c1, c2 = st.columns(2)
                 with c1:
