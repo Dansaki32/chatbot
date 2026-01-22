@@ -35,6 +35,7 @@ def inject_custom_css():
             --text-white: #FFFFFF;
             --text-gray: #B0B0B0;
             
+            /* TYPE SYSTEM */
             --font-display: 'Dolce Vita Bold', 'Roboto', sans-serif;
             --font-subdisplay: 'Dolce Vita', 'Roboto', sans-serif;
             --font-body: 'Roboto', sans-serif;
@@ -44,58 +45,56 @@ def inject_custom_css():
         /* 3. GLOBAL RESETS */
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
         
-        /* FIX: REDUCE TOP PADDING FOR MAIN PAGE */
-        /* FIX: INCREASE BOTTOM PADDING TO STABILIZE CHAT INPUT */
         .block-container { 
             padding-top: 2rem !important; 
-            padding-bottom: 8rem !important; /* Prevents chat box jumpiness */
+            padding-bottom: 8rem !important; 
         }
         
-        h1, h2, h3 { font-family: var(--font-display) !important; letter-spacing: 1px; text-transform: uppercase; }
-        p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
+        h1, h2, h3 { 
+            font-family: var(--font-display) !important; 
+            letter-spacing: 2px !important; 
+            text-transform: uppercase !important; 
+        }
+        
+        p, div, span, li { 
+            font-family: var(--font-body); 
+            color: var(--text-white); 
+        }
 
-        /* 4. SIDEBAR - LOGO FIX (ABSOLUTE TOP LEFT) */
+        /* 4. SIDEBAR - ZERO PADDING LOGO FIX */
         [data-testid="stSidebar"] { 
             background-color: var(--sidebar-bg); 
             border-right: 1px solid #333; 
         }
-        
-        /* REMOVE ALL DEFAULT STREAMLIT PADDING FROM SIDEBAR */
-        section[data-testid="stSidebar"] > div {
-            padding-top: 0rem !important;
-        }
-        
-        /* TARGET THE USER CONTENT CONTAINER TO REMOVE GAP */
-        div[data-testid="stSidebarUserContent"] {
-            padding-top: 0rem !important;
-            margin-top: -20px !important; /* Pull it up even further if needed */
-        }
+        section[data-testid="stSidebar"] > div { padding-top: 0rem !important; }
+        div[data-testid="stSidebarUserContent"] { padding-top: 0rem !important; }
 
-        /* 5. FILE UPLOADER - TEXT VISIBILITY FIX (WHITE TEXT) */
+        /* 5. FILE UPLOADER - SHARP & UNIFIED */
         [data-testid="stFileUploader"] {
-            background-color: #111111;
-            border: 1px dashed #444;
+            background-color: #0A0A0A;
+            border: 1px solid #333; /* Solid border to match others */
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 0px !important; /* SHARP CORNERS */
         }
-        [data-testid="stFileUploader"] section { background-color: #111111 !important; }
+        [data-testid="stFileUploader"] section { background-color: #0A0A0A !important; }
         
-        /* Force specific text elements to be WHITE */
-        [data-testid="stFileUploader"] div, 
-        [data-testid="stFileUploader"] span, 
-        [data-testid="stFileUploader"] small,
-        [data-testid="stFileUploader"] p {
+        /* Text Visibility */
+        [data-testid="stFileUploader"] div[data-testid="stMarkdownContainer"] p {
             color: #FFFFFF !important; 
             font-family: var(--font-body);
+            font-size: 0.9rem;
         }
+        [data-testid="stFileUploader"] small { color: #666 !important; }
         
-        /* Button Style */
+        /* Button Unification */
         [data-testid="stFileUploader"] button { 
             background-color: var(--accent-red) !important; 
             color: white !important; 
             border: none; 
+            border-radius: 0px !important; /* SHARP */
             font-family: var(--font-display);
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         /* 6. SYSTEM CONTROLS (Sidebar Buttons) */
@@ -103,54 +102,89 @@ def inject_custom_css():
             background-color: #000000 !important;
             color: var(--accent-red) !important;
             border: 1px solid var(--accent-red) !important;
+            border-radius: 0px !important; /* SHARP */
             font-family: var(--font-display) !important;
             letter-spacing: 1px;
             text-transform: uppercase;
             width: 100%;
+            transition: all 0.2s ease;
         }
         [data-testid="stSidebar"] .stButton button:hover {
             background-color: var(--accent-red) !important;
             color: #FFFFFF !important;
-            box-shadow: 0 0 10px rgba(211, 21, 21, 0.4);
+            box-shadow: 0 0 15px rgba(211, 21, 21, 0.3);
         }
 
-        /* 7. METRIC CARDS */
+        /* 7. METRIC CARDS - UNIFIED AESTHETIC */
         .metric-card { 
             background: #000000; 
-            border: 1px solid #222; 
+            border: 1px solid #333; 
             padding: 20px; 
-            border-radius: 4px; 
+            border-radius: 0px !important; /* SHARP */
             height: 100%; 
             transition: all 0.3s ease;
             margin-bottom: 20px;
         }
-        .metric-card:hover { border-color: var(--accent-red); box-shadow: 0 0 15px rgba(211, 21, 21, 0.1); }
-        .metric-label { font-family: var(--font-subdisplay); font-size: 0.8rem; color: var(--text-gray); letter-spacing: 2px; margin-bottom: 5px; }
-        .metric-value { font-family: var(--font-display); font-size: 1.5rem; color: var(--text-white); }
-        .metric-desc { font-family: var(--font-body); font-size: 0.75rem; color: #666; margin-top: 5px; }
+        .metric-card:hover { 
+            border-color: var(--accent-red); 
+            box-shadow: 0 0 20px rgba(211, 21, 21, 0.15); 
+        }
+        .metric-label { 
+            font-family: var(--font-subdisplay); 
+            font-size: 0.75rem; 
+            color: var(--text-gray); 
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+            margin-bottom: 8px; 
+        }
+        .metric-value { 
+            font-family: var(--font-display); 
+            font-size: 1.5rem; 
+            color: var(--text-white); 
+            letter-spacing: 1px;
+        }
+        .metric-desc { 
+            font-family: var(--font-body); 
+            font-size: 0.75rem; 
+            color: #555; 
+            margin-top: 5px; 
+        }
 
-        /* 8. CHAT INPUT STABILITY */
-        /* Fixed bottom position logic handled by Streamlit, but we style the box */
+        /* 8. CHAT INPUT - SHARP & ANCHORED */
         div[data-testid="stChatInput"] {
-            background-color: var(--bg-color) !important; /* Match page bg to hide scrolling content */
-            padding-bottom: 1rem !important;
+            background-color: var(--bg-color) !important;
+            padding-bottom: 1.5rem !important;
             padding-top: 1rem !important;
         }
         div[data-testid="stChatInput"] textarea { 
-            background-color: #333333 !important; 
+            background-color: #0A0A0A !important; 
             color: #FFFFFF !important; 
             caret-color: #D31515 !important;
-            border: 1px solid #555 !important; 
+            border: 1px solid #333 !important; 
+            border-radius: 0px !important; /* SHARP */
             font-family: var(--font-body) !important;
         }
         div[data-testid="stChatInput"] textarea:focus {
             border-color: var(--accent-red) !important;
-            box-shadow: 0 0 0 1px var(--accent-red) !important;
+            box-shadow: 0 0 10px rgba(211, 21, 21, 0.2) !important;
         }
 
-        /* 9. ACTIVE SESSION PULSE */
+        /* 9. TABS - CLEANER LOOK */
+        button[data-baseweb="tab"] {
+            font-family: var(--font-subdisplay) !important;
+            letter-spacing: 1px;
+            border-radius: 0px !important;
+        }
+
+        /* 10. ANIMATIONS */
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .active-session-text { color: var(--accent-red); font-family: var(--font-mono); font-size: 0.8rem; animation: pulse-red 2s infinite; }
+        .active-session-text { 
+            color: var(--accent-red); 
+            font-family: var(--font-mono); 
+            font-size: 0.8rem; 
+            letter-spacing: 1px;
+            animation: pulse-red 2s infinite; 
+        }
         
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
     </style>
@@ -219,7 +253,7 @@ class AIEngine:
 
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        # LOGO - Checks local paths
+        # LOGO
         script_dir = os.path.dirname(os.path.abspath(__file__))
         possible_paths = [
             os.path.join(script_dir, "logo.png"),              
@@ -235,7 +269,7 @@ def render_sidebar(data_engine, ai_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.3
+                Accounts OS v4.4
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
@@ -310,7 +344,6 @@ def main():
     
     if "messages" not in st.session_state: st.session_state.messages = []
 
-    # Auto-Load
     if "local_loaded" not in st.session_state:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         local_file = os.path.join(script_dir, "table.tsv")
@@ -330,13 +363,13 @@ def main():
 
     with tab1:
         st.markdown("""
-            <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 20px;'>
+            <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
                 <div><span class='active-session-text'>// ACTIVE SESSION</span></div>
                 <div style='font-family: "JetBrains Mono"; font-size:0.7rem; color:#555;'>{timestamp}</div>
             </div>
         """.format(timestamp=datetime.now().strftime("%Y-%m-%d %H:%M")), unsafe_allow_html=True)
 
-        render_dashboard_metrics() # Metrics always visible
+        render_dashboard_metrics()
 
         if not st.session_state.messages:
             st.markdown("<br><br><div style='text-align:center; color:#555; font-family:JetBrains Mono; font-size: 0.8rem;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
