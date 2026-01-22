@@ -5,7 +5,7 @@ import sqlite3
 import time
 import plotly.express as px
 import os
-import pypdf  # <--- NEW IMPORT FOR PDF READING
+import pypdf
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -75,7 +75,6 @@ def inject_custom_css():
         }
         [data-testid="stFileUploader"] section { background-color: #0A0A0A !important; }
         
-        /* Force Text White */
         [data-testid="stFileUploader"] div,
         [data-testid="stFileUploader"] span,
         [data-testid="stFileUploader"] small,
@@ -154,7 +153,6 @@ def inject_custom_css():
 # --- 3. BACKEND LOGIC ---
 
 class PDFEngine:
-    """Handles PDF ingestion by converting pages to DataFrame rows."""
     def process_pdf(self, file_buffer):
         try:
             reader = pypdf.PdfReader(file_buffer)
@@ -163,8 +161,6 @@ class PDFEngine:
                 text = page.extract_text()
                 if text:
                     text_data.append({"Page": i + 1, "Content": text})
-            
-            # Convert to DataFrame compatible with our DataEngine
             return pd.DataFrame(text_data)
         except Exception as e:
             return pd.DataFrame([{"Error": f"Failed to read PDF: {str(e)}"}] )
@@ -178,27 +174,45 @@ class DataEngine:
 
     def ingest_data(self, df, filename):
         table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
-        # Clean column names for SQLite
         df.columns = [c.replace(" ", "_").strip() for c in df.columns]
-        
         with self.get_connection() as conn:
             df.to_sql(table_name, conn, if_exists='replace', index=False)
         return table_name
 
     def get_schema_context(self):
+        """
+        UPDATED: Now pulls the ACTUAL TEXT CONTENT from the tables, 
+        not just the column names.
+        """
         context_str = ""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
             tables = cursor.fetchall()
+            
+            if not tables:
+                return "NO DATASETS LOADED. PLEASE UPLOAD A FILE."
+
             for t in tables:
-                table = t[0]
+                table_name = t[0]
                 try:
-                    df_sample = pd.read_sql(f"SELECT * FROM {table} LIMIT 1", conn)
+                    # 1. Get Schema
+                    df_sample = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 1", conn)
                     cols = ", ".join(df_sample.columns)
-                    context_str += f"- TABLE: {table} | COLUMNS: {cols}\n"
-                except: continue
-        return context_str if context_str else "NO DATASETS LOADED."
+                    
+                    # 2. Get Actual Data (Limit to prevent token overflow, but fetch enough to be useful)
+                    # We fetch the first 20 rows of content to give the AI context.
+                    df_content = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 50", conn)
+                    data_string = df_content.to_string(index=False)
+                    
+                    context_str += f"\n=== TABLE: {table_name} ===\n"
+                    context_str += f"COLUMNS: {cols}\n"
+                    context_str += f"CONTENT SAMPLE:\n{data_string}\n"
+                    context_str += "==============================\n"
+                except Exception as e:
+                    context_str += f"Error reading table {table_name}: {str(e)}\n"
+                    
+        return context_str
 
 class AIEngine:
     def __init__(self):
@@ -218,11 +232,21 @@ class AIEngine:
 
     def stream_response(self, user_query, history, db_context):
         if not self.active: yield "SYSTEM ERROR: API KEY MISSING."; return
+        
+        # We tell the AI that the context provided IS the document content.
         system_prompt = f"""
         ROLE: You are QR_ ACCOUNTS OS, an elite Account Strategy Operating System.
-        TONE: Professional, concise, data-driven.
-        CONTEXT: {db_context}
+        TONE: Professional, concise, data-driven. Use bullet points.
+        
+        INSTRUCTIONS:
+        You have direct access to the uploaded data below. 
+        When the user asks a question, SEARCH THIS DATA directly to find the answer.
+        Do not say "I cannot interpret documents". The documents have been converted to text for you below.
+        
+        [SECURE DATA CONTEXT]
+        {db_context}
         """
+        
         full_query = f"{system_prompt}\n\nUSER QUERY: {user_query}"
         try:
             response = self.model.generate_content(full_query, stream=True)
@@ -249,7 +273,7 @@ def render_sidebar(data_engine, ai_engine, pdf_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.6
+                Accounts OS v4.7
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
@@ -260,7 +284,6 @@ def render_sidebar(data_engine, ai_engine, pdf_engine):
             </div>
         """, unsafe_allow_html=True)
         
-        # ALLOW PDF IN UPLOADER
         uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed")
         
         if uploaded_file:
@@ -277,7 +300,7 @@ def render_sidebar(data_engine, ai_engine, pdf_engine):
                     df = pd.read_csv(uploaded_file, sep=sep)
                 
                 if df is not None:
-                    ai_engine.validate_data(df.head(3).to_string())
+                    # ai_engine.validate_data(df.head(3).to_string()) # Optional skip for speed
                     data_engine.ingest_data(df, uploaded_file.name)
                     st.session_state.last_upload = uploaded_file.name
                     st.session_state.active_df = df
@@ -332,7 +355,7 @@ def main():
     inject_custom_css()
     data_engine = DataEngine()
     ai_engine = AIEngine()
-    pdf_engine = PDFEngine() # Initialize PDF Engine
+    pdf_engine = PDFEngine()
     
     if "messages" not in st.session_state: st.session_state.messages = []
 
@@ -393,9 +416,7 @@ def main():
         if "active_df" in st.session_state:
             df = st.session_state.active_df
             st.markdown("### DATA RECONNAISSANCE")
-            # PDF Dataframes usually just have text, not numbers, so we handle that:
             num_cols = df.select_dtypes(include=['float64', 'int64']).columns
-            
             if len(num_cols) > 0:
                 c1, c2 = st.columns(2)
                 with c1:
@@ -404,9 +425,7 @@ def main():
                     fig.update_traces(marker_color='#D31515')
                     st.plotly_chart(fig, use_container_width=True)
                 with c2: st.dataframe(df, use_container_width=True)
-            else:
-                # Text-heavy data (like PDFs)
-                st.dataframe(df, use_container_width=True)
+            else: st.dataframe(df, use_container_width=True)
         else: st.info("NO DATA LOADED.")
 
 if __name__ == "__main__":
