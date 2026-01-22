@@ -5,6 +5,7 @@ import sqlite3
 import time
 import plotly.express as px
 import os
+import pypdf  # <--- NEW IMPORT FOR PDF READING
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -41,10 +42,8 @@ def inject_custom_css():
             --font-mono: 'JetBrains Mono', monospace;
         }
 
-        /* 3. GLOBAL SHARPNESS - SQUARE EVERYTHING */
-        * {
-            border-radius: 0px !important;
-        }
+        /* 3. GLOBAL SHARPNESS */
+        * { border-radius: 0px !important; }
 
         /* 4. GLOBAL RESETS */
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
@@ -57,22 +56,18 @@ def inject_custom_css():
         }
         p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* 5. SIDEBAR - LOGO FIX (NEGATIVE MARGIN TRICK) */
+        /* 5. SIDEBAR - LOGO FIX */
         [data-testid="stSidebar"] { 
             background-color: var(--sidebar-bg); 
             border-right: 1px solid #333; 
         }
-        /* This pulls the logo up past the default padding */
         [data-testid="stSidebar"] img {
             margin-top: -75px !important;
             margin-bottom: 20px !important;
         }
-        /* Remove default padding from the sidebar container */
-        section[data-testid="stSidebar"] > div {
-            padding-top: 2rem !important;
-        }
+        section[data-testid="stSidebar"] > div { padding-top: 2rem !important; }
 
-        /* 6. FILE UPLOADER - TEXT VISIBILITY FIX */
+        /* 6. FILE UPLOADER */
         [data-testid="stFileUploader"] {
             background-color: #0A0A0A;
             border: 1px solid #333;
@@ -80,7 +75,7 @@ def inject_custom_css():
         }
         [data-testid="stFileUploader"] section { background-color: #0A0A0A !important; }
         
-        /* NUCLEAR TARGETING FOR TEXT - FORCE WHITE */
+        /* Force Text White */
         [data-testid="stFileUploader"] div,
         [data-testid="stFileUploader"] span,
         [data-testid="stFileUploader"] small,
@@ -90,7 +85,6 @@ def inject_custom_css():
             font-family: var(--font-body) !important;
         }
         
-        /* Button Style */
         [data-testid="stFileUploader"] button { 
             background-color: var(--accent-red) !important; 
             color: white !important; 
@@ -100,7 +94,7 @@ def inject_custom_css():
             text-transform: uppercase;
         }
 
-        /* 7. SYSTEM CONTROLS (Sidebar Buttons) */
+        /* 7. SIDEBAR BUTTONS */
         [data-testid="stSidebar"] .stButton button {
             background-color: #000000 !important;
             color: var(--accent-red) !important;
@@ -126,32 +120,12 @@ def inject_custom_css():
             transition: all 0.3s ease;
             margin-bottom: 20px;
         }
-        .metric-card:hover { 
-            border-color: var(--accent-red); 
-            box-shadow: 0 0 20px rgba(211, 21, 21, 0.15); 
-        }
-        .metric-label { 
-            font-family: var(--font-subdisplay); 
-            font-size: 0.75rem; 
-            color: var(--text-gray); 
-            letter-spacing: 2px; 
-            text-transform: uppercase;
-            margin-bottom: 8px; 
-        }
-        .metric-value { 
-            font-family: var(--font-display); 
-            font-size: 1.5rem; 
-            color: var(--text-white); 
-            letter-spacing: 1px;
-        }
-        .metric-desc { 
-            font-family: var(--font-body); 
-            font-size: 0.75rem; 
-            color: #555; 
-            margin-top: 5px; 
-        }
+        .metric-card:hover { border-color: var(--accent-red); box-shadow: 0 0 20px rgba(211, 21, 21, 0.15); }
+        .metric-label { font-family: var(--font-subdisplay); font-size: 0.75rem; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .metric-value { font-family: var(--font-display); font-size: 1.5rem; color: var(--text-white); letter-spacing: 1px; }
+        .metric-desc { font-family: var(--font-body); font-size: 0.75rem; color: #555; margin-top: 5px; }
 
-        /* 9. CHAT INPUT - FORCE DARK BACKGROUND */
+        /* 9. CHAT INPUT */
         div[data-testid="stChatInput"] {
             background-color: var(--bg-color) !important;
             padding-bottom: 1.5rem !important;
@@ -169,27 +143,31 @@ def inject_custom_css():
             box-shadow: 0 0 10px rgba(211, 21, 21, 0.2) !important;
         }
 
-        /* 10. TABS */
-        button[data-baseweb="tab"] {
-            font-family: var(--font-subdisplay) !important;
-            letter-spacing: 1px;
-        }
-
-        /* 11. ANIMATIONS */
+        /* 10. ANIMATIONS */
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .active-session-text { 
-            color: var(--accent-red); 
-            font-family: var(--font-mono); 
-            font-size: 0.8rem; 
-            letter-spacing: 1px;
-            animation: pulse-red 2s infinite; 
-        }
+        .active-session-text { color: var(--accent-red); font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 1px; animation: pulse-red 2s infinite; }
         
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
 # --- 3. BACKEND LOGIC ---
+
+class PDFEngine:
+    """Handles PDF ingestion by converting pages to DataFrame rows."""
+    def process_pdf(self, file_buffer):
+        try:
+            reader = pypdf.PdfReader(file_buffer)
+            text_data = []
+            for i, page in enumerate(reader.pages):
+                text = page.extract_text()
+                if text:
+                    text_data.append({"Page": i + 1, "Content": text})
+            
+            # Convert to DataFrame compatible with our DataEngine
+            return pd.DataFrame(text_data)
+        except Exception as e:
+            return pd.DataFrame([{"Error": f"Failed to read PDF: {str(e)}"}] )
 
 class DataEngine:
     def __init__(self, db_name='strategy_core.db'):
@@ -200,6 +178,9 @@ class DataEngine:
 
     def ingest_data(self, df, filename):
         table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
+        # Clean column names for SQLite
+        df.columns = [c.replace(" ", "_").strip() for c in df.columns]
+        
         with self.get_connection() as conn:
             df.to_sql(table_name, conn, if_exists='replace', index=False)
         return table_name
@@ -250,7 +231,7 @@ class AIEngine:
 
 # --- 4. FRONTEND COMPONENTS ---
 
-def render_sidebar(data_engine, ai_engine):
+def render_sidebar(data_engine, ai_engine, pdf_engine):
     with st.sidebar:
         # LOGO
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -268,32 +249,43 @@ def render_sidebar(data_engine, ai_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.5
+                Accounts OS v4.6
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
 
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 01 // DATA INGESTION
             </div>
         """, unsafe_allow_html=True)
         
-        uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv'], label_visibility="collapsed")
+        # ALLOW PDF IN UPLOADER
+        uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed")
         
         if uploaded_file:
             if "last_upload" not in st.session_state or st.session_state.last_upload != uploaded_file.name:
-                sep = '\t' if uploaded_file.name.endswith('.tsv') else ','
-                df = pd.read_csv(uploaded_file, sep=sep)
-                ai_engine.validate_data(df.head(3).to_string())
-                data_engine.ingest_data(df, uploaded_file.name)
-                st.session_state.last_upload = uploaded_file.name
-                st.session_state.active_df = df
-                st.toast(f"SYSTEM: {uploaded_file.name} INGESTED", icon="💾")
+                df = None
+                
+                # --- PROCESS PDF ---
+                if uploaded_file.name.endswith('.pdf'):
+                    with st.spinner("DECODING PDF VECTOR..."):
+                        df = pdf_engine.process_pdf(uploaded_file)
+                # --- PROCESS CSV/TSV ---
+                else:
+                    sep = '\t' if uploaded_file.name.endswith('.tsv') else ','
+                    df = pd.read_csv(uploaded_file, sep=sep)
+                
+                if df is not None:
+                    ai_engine.validate_data(df.head(3).to_string())
+                    data_engine.ingest_data(df, uploaded_file.name)
+                    st.session_state.last_upload = uploaded_file.name
+                    st.session_state.active_df = df
+                    st.toast(f"SYSTEM: {uploaded_file.name} INGESTED", icon="💾")
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#D31515; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 02 // SYSTEM CONTROLS
             </div>
         """, unsafe_allow_html=True)
@@ -340,6 +332,7 @@ def main():
     inject_custom_css()
     data_engine = DataEngine()
     ai_engine = AIEngine()
+    pdf_engine = PDFEngine() # Initialize PDF Engine
     
     if "messages" not in st.session_state: st.session_state.messages = []
 
@@ -356,7 +349,7 @@ def main():
             except: pass
         else: st.session_state.local_loaded = False
 
-    render_sidebar(data_engine, ai_engine)
+    render_sidebar(data_engine, ai_engine, pdf_engine)
 
     tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
 
@@ -400,7 +393,9 @@ def main():
         if "active_df" in st.session_state:
             df = st.session_state.active_df
             st.markdown("### DATA RECONNAISSANCE")
+            # PDF Dataframes usually just have text, not numbers, so we handle that:
             num_cols = df.select_dtypes(include=['float64', 'int64']).columns
+            
             if len(num_cols) > 0:
                 c1, c2 = st.columns(2)
                 with c1:
@@ -409,7 +404,9 @@ def main():
                     fig.update_traces(marker_color='#D31515')
                     st.plotly_chart(fig, use_container_width=True)
                 with c2: st.dataframe(df, use_container_width=True)
-            else: st.dataframe(df, use_container_width=True)
+            else:
+                # Text-heavy data (like PDFs)
+                st.dataframe(df, use_container_width=True)
         else: st.info("NO DATA LOADED.")
 
 if __name__ == "__main__":
