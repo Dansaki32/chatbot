@@ -27,7 +27,7 @@ def inject_custom_css():
             --text-white: #FFFFFF;
             --text-gray: #CCCCCC;
             --highlight-red: #D31515;
-            --highlight-green: #4CAF50; /* Green for status */
+            --highlight-green: #4CAF50;
             --input-bg: #333333;
         }
 
@@ -41,7 +41,7 @@ def inject_custom_css():
         [data-testid="stFileUploader"] div { color: var(--text-gray) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--highlight-red) !important; color: white !important; border: none; font-weight: bold; }
 
-        /* SIDEBAR BUTTONS - FORCE RED TEXT */
+        /* SIDEBAR BUTTONS */
         [data-testid="stSidebar"] .stButton button {
             color: var(--highlight-red) !important;
             border-color: #333 !important;
@@ -158,15 +158,35 @@ class AIEngine:
 
 def render_sidebar(data_engine, ai_engine):
     with st.sidebar:
-        st.markdown("""
-            <div style='margin-bottom: 20px;'>
+        # --- LOGO SECTION (UPDATED) ---
+        # Checks your 'assessts' folder first
+        possible_paths = [
+            "assessts/QR_logo, long, white.png",  # Found in your screenshot
+            "assets/QR_logo, long, white.png",    # Just in case you rename it
+            "QR_logo, long, white.png",           # Root fallback
+            "Capture.PNG"
+        ]
+        
+        logo_path = None
+        for p in possible_paths:
+            if os.path.exists(p):
+                logo_path = p
+                break
+        
+        if logo_path:
+            st.image(logo_path, use_container_width=True)
+        else:
+            # Fallback Text Logo
+            st.markdown("""
                 <h1 style='color:white; font-size:3rem; margin:0; line-height:0.8;'>QR<span style='color:#D31515;'>_</span></h1>
-                <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top:5px;'>ACCOUNTS OS v3.3</div>
-            </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("""
+            <div style='font-family: "JetBrains Mono"; font-size: 0.7rem; color: #CCCCCC; letter-spacing: 2px; margin-top: 10px; margin-bottom: 20px;'>ACCOUNTS OS v3.5</div>
+            <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
-        st.markdown("---")
-        
+        # Upload
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv'], label_visibility="collapsed")
         
@@ -185,18 +205,16 @@ def render_sidebar(data_engine, ai_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Controls
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
-        
-        # --- FIXED BUTTON: No HTML inside string, colored via CSS ---
         if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
 
 def render_zero_state():
-    # Check if we have data to determine status
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
-    # Use Green (#4CAF50) for all main states as requested
+    # All Green text
     status_color = "#4CAF50"
     
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -242,7 +260,7 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # --- AUTO-DETECT LOCAL TABLE.TSV ---
+    # Auto-Load
     if "local_loaded" not in st.session_state:
         local_file = "table.tsv"
         if os.path.exists(local_file):
@@ -259,7 +277,6 @@ def main():
 
     render_sidebar(data_engine, ai_engine)
 
-    # UPDATED TABS: ACCOUNTS_CHAT
     tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
 
     with tab1:
@@ -310,7 +327,7 @@ def main():
             st.markdown("### DATA RECONNAISSANCE")
             
             num_cols = df.select_dtypes(include=['float64', 'int64']).columns
-            32
+            
             if len(num_cols) > 0:
                 c1, c2 = st.columns(2)
                 with c1:
