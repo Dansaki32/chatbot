@@ -16,203 +16,123 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. VISUAL CORE (THE "NUCLEAR" CSS) ---
+# --- 2. VISUAL CORE (CSS) ---
 def inject_custom_css():
     st.markdown("""
     <style>
-        /* 1. LOAD FONTS */
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400&display=swap');
-
+        
         @font-face { font-family: 'Dolce Vita'; src: url('Dolce Vita.ttf') format('truetype'); font-weight: normal; }
-        @font-face { font-family: 'Dolce Vita Light'; src: url('Dolce Vita Light.ttf') format('truetype'); font-weight: 300; }
         @font-face { font-family: 'Dolce Vita Bold'; src: url('Dolce Vita Heavy Bold.ttf') format('truetype'); font-weight: bold; }
 
-        /* 2. ROOT VARIABLES */
         :root {
             --bg-color: #1a1a1a;
             --sidebar-bg: #000000;
             --accent-red: #D31515;
-            --accent-green: #4CAF50;
             --text-white: #FFFFFF;
-            --text-gray: #B0B0B0;
-            
             --font-display: 'Dolce Vita Bold', 'Roboto', sans-serif;
-            --font-subdisplay: 'Dolce Vita', 'Roboto', sans-serif;
             --font-body: 'Roboto', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
 
-        /* 3. GLOBAL SHARPNESS */
+        /* GLOBAL RESETS */
         * { border-radius: 0px !important; }
-
-        /* 4. GLOBAL RESETS */
         .stApp { background-color: var(--bg-color); font-family: var(--font-body); }
         .block-container { padding-top: 2rem !important; padding-bottom: 8rem !important; }
         
-        h1, h2, h3 { 
-            font-family: var(--font-display) !important; 
-            letter-spacing: 2px !important; 
-            text-transform: uppercase !important; 
-        }
+        h1, h2, h3 { font-family: var(--font-display) !important; letter-spacing: 2px !important; text-transform: uppercase !important; }
         p, div, span, li { font-family: var(--font-body); color: var(--text-white); }
 
-        /* 5. SIDEBAR - LOGO FIX */
-        [data-testid="stSidebar"] { 
-            background-color: var(--sidebar-bg); 
-            border-right: 1px solid #333; 
-        }
-        [data-testid="stSidebar"] img {
-            margin-top: -75px !important;
-            margin-bottom: 20px !important;
-        }
-        section[data-testid="stSidebar"] > div { padding-top: 2rem !important; }
+        /* SIDEBAR */
+        [data-testid="stSidebar"] { background-color: var(--sidebar-bg); border-right: 1px solid #333; }
+        section[data-testid="stSidebar"] > div { padding-top: 0rem !important; }
+        [data-testid="stSidebar"] img { margin-top: -75px !important; margin-bottom: 20px !important; }
 
-        /* 6. FILE UPLOADER */
-        [data-testid="stFileUploader"] {
-            background-color: #0A0A0A;
-            border: 1px solid #333;
-            padding: 15px;
+        /* FILE UPLOADER */
+        [data-testid="stFileUploader"] { background-color: #0A0A0A; border: 1px solid #333; padding: 15px; }
+        [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
+        [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
+
+        /* BUTTONS */
+        div.stButton > button { 
+            background-color: #000000 !important; color: var(--accent-red) !important; 
+            border: 1px solid var(--accent-red) !important; font-family: var(--font-display) !important; 
+            text-transform: uppercase; width: 100%; transition: all 0.2s ease;
         }
-        [data-testid="stFileUploader"] section { background-color: #0A0A0A !important; }
+        div.stButton > button:hover { box-shadow: 0 0 15px rgba(211, 21, 21, 0.4); color: white !important; background-color: var(--accent-red) !important; }
+
+        /* METRIC CARDS */
+        .metric-card { background: #000000; border: 1px solid #333; padding: 20px; height: 100%; margin-bottom: 20px; }
+        .metric-label { font-family: var(--font-body); font-size: 0.75rem; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .metric-value { font-family: var(--font-display); font-size: 1.5rem; color: white; letter-spacing: 1px; }
+
+        /* CHAT INPUT */
+        div[data-testid="stChatInput"] { background-color: var(--bg-color) !important; padding-bottom: 1.5rem !important; }
+        div[data-testid="stChatInput"] textarea { background-color: #0A0A0A !important; color: white !important; border: 1px solid #333 !important; }
+        div[data-testid="stChatInput"] textarea:focus { border-color: var(--accent-red) !important; box-shadow: 0 0 10px rgba(211, 21, 21, 0.2) !important; }
+
+        /* TABS */
+        button[data-baseweb="tab"] { font-family: var(--font-display) !important; letter-spacing: 1px; }
         
-        [data-testid="stFileUploader"] div,
-        [data-testid="stFileUploader"] span,
-        [data-testid="stFileUploader"] small,
-        [data-testid="stFileUploader"] p,
-        [data-testid="stFileUploader"] label {
-            color: #FFFFFF !important;
-            font-family: var(--font-body) !important;
-        }
-        
-        [data-testid="stFileUploader"] button { 
-            background-color: var(--accent-red) !important; 
-            color: white !important; 
-            border: none; 
-            font-family: var(--font-display);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        /* 7. SIDEBAR BUTTONS */
-        [data-testid="stSidebar"] .stButton button {
-            background-color: #000000 !important;
-            color: var(--accent-red) !important;
-            border: 1px solid var(--accent-red) !important;
-            font-family: var(--font-display) !important;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            width: 100%;
-            transition: all 0.2s ease;
-        }
-        [data-testid="stSidebar"] .stButton button:hover {
-            background-color: var(--accent-red) !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 0 15px rgba(211, 21, 21, 0.3);
-        }
-
-        /* 8. METRIC CARDS */
-        .metric-card { 
-            background: #000000; 
-            border: 1px solid #333; 
-            padding: 20px; 
-            height: 100%; 
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-        }
-        .metric-card:hover { border-color: var(--accent-red); box-shadow: 0 0 20px rgba(211, 21, 21, 0.15); }
-        .metric-label { font-family: var(--font-subdisplay); font-size: 0.75rem; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-        .metric-value { font-family: var(--font-display); font-size: 1.5rem; color: var(--text-white); letter-spacing: 1px; }
-        .metric-desc { font-family: var(--font-body); font-size: 0.75rem; color: #555; margin-top: 5px; }
-
-        /* 9. CHAT INPUT */
-        div[data-testid="stChatInput"] {
-            background-color: var(--bg-color) !important;
-            padding-bottom: 1.5rem !important;
-            padding-top: 1rem !important;
-        }
-        div[data-testid="stChatInput"] textarea { 
-            background-color: #0A0A0A !important; 
-            color: #FFFFFF !important; 
-            caret-color: #D31515 !important;
-            border: 1px solid #333 !important; 
-            font-family: var(--font-body) !important;
-        }
-        div[data-testid="stChatInput"] textarea:focus {
-            border-color: var(--accent-red) !important;
-            box-shadow: 0 0 10px rgba(211, 21, 21, 0.2) !important;
-        }
-
-        /* 10. ANIMATIONS */
-        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .active-session-text { color: var(--accent-red); font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 1px; animation: pulse-red 2s infinite; }
-        
-        #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. BACKEND LOGIC ---
+# --- 3. BACKEND LOGIC (PERSISTENT KNOWLEDGE BASE) ---
 
-class PDFEngine:
-    def process_pdf(self, file_buffer):
-        try:
-            reader = pypdf.PdfReader(file_buffer)
-            text_data = []
-            for i, page in enumerate(reader.pages):
-                text = page.extract_text()
-                if text:
-                    text_data.append({"Page": i + 1, "Content": text})
-            return pd.DataFrame(text_data)
-        except Exception as e:
-            return pd.DataFrame([{"Error": f"Failed to read PDF: {str(e)}"}] )
+STORAGE_DIR = "knowledge_base"
 
-class DataEngine:
-    def __init__(self, db_name='strategy_core.db'):
-        self.db_name = db_name
+def init_storage():
+    """Ensures the local storage folder exists."""
+    if not os.path.exists(STORAGE_DIR):
+        os.makedirs(STORAGE_DIR)
 
-    def get_connection(self):
-        return sqlite3.connect(self.db_name)
+def save_uploaded_file(uploaded_file):
+    """Saves a file permanently to the disk."""
+    try:
+        file_path = os.path.join(STORAGE_DIR, uploaded_file.name)
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        return file_path
+    except Exception as e:
+        return None
 
-    def ingest_data(self, df, filename):
-        table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
-        df.columns = [c.replace(" ", "_").strip() for c in df.columns]
-        with self.get_connection() as conn:
-            df.to_sql(table_name, conn, if_exists='replace', index=False)
-        return table_name
-
-    def get_schema_context(self):
-        """
-        UPDATED: Now pulls the ACTUAL TEXT CONTENT from the tables, 
-        not just the column names.
-        """
-        context_str = ""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-            tables = cursor.fetchall()
+class KnowledgeEngine:
+    """Reads ALL files in the knowledge_base folder to build a mega-context."""
+    
+    def get_all_context(self):
+        context = ""
+        files = [f for f in os.listdir(STORAGE_DIR) if os.path.isfile(os.path.join(STORAGE_DIR, f))]
+        
+        if not files:
+            return "NO KNOWLEDGE BASE FILES FOUND. PLEASE UPLOAD DATA."
+        
+        context += f"/// SYSTEM KNOWLEDGE BASE ({len(files)} FILES LOADED) ///\n\n"
+        
+        for filename in files:
+            file_path = os.path.join(STORAGE_DIR, filename)
+            context += f"=== SOURCE FILE: {filename} ===\n"
             
-            if not tables:
-                return "NO DATASETS LOADED. PLEASE UPLOAD A FILE."
-
-            for t in tables:
-                table_name = t[0]
-                try:
-                    # 1. Get Schema
-                    df_sample = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 1", conn)
-                    cols = ", ".join(df_sample.columns)
+            try:
+                # PROCESS PDF
+                if filename.endswith(".pdf"):
+                    reader = pypdf.PdfReader(file_path)
+                    text = ""
+                    for page in reader.pages:
+                        text += page.extract_text() + "\n"
+                    context += f"{text[:10000]} ... [TRUNCATED IF TOO LONG]\n\n"
+                
+                # PROCESS CSV/TSV
+                elif filename.endswith(".csv") or filename.endswith(".tsv"):
+                    sep = '\t' if filename.endswith('.tsv') else ','
+                    df = pd.read_csv(file_path, sep=sep)
+                    context += df.to_string(index=False) + "\n\n"
                     
-                    # 2. Get Actual Data (Limit to prevent token overflow, but fetch enough to be useful)
-                    # We fetch the first 20 rows of content to give the AI context.
-                    df_content = pd.read_sql(f"SELECT * FROM {table_name} LIMIT 50", conn)
-                    data_string = df_content.to_string(index=False)
-                    
-                    context_str += f"\n=== TABLE: {table_name} ===\n"
-                    context_str += f"COLUMNS: {cols}\n"
-                    context_str += f"CONTENT SAMPLE:\n{data_string}\n"
-                    context_str += "==============================\n"
-                except Exception as e:
-                    context_str += f"Error reading table {table_name}: {str(e)}\n"
-                    
-        return context_str
+            except Exception as e:
+                context += f"[ERROR READING FILE: {str(e)}]\n\n"
+                
+        return context
 
 class AIEngine:
     def __init__(self):
@@ -223,210 +143,174 @@ class AIEngine:
             self.active = True
         except: self.active = False
 
-    def validate_data(self, df_head):
-        if not self.active: return "UNKNOWN (API OFF)"
-        try:
-            response = self.model.generate_content(f"Analyze schema: {df_head}. Task: 1-sentence summary.")
-            return response.text.strip()
-        except: return "VALIDATION ERROR"
-
-    def stream_response(self, user_query, history, db_context):
+    def stream_response(self, user_query, db_context):
         if not self.active: yield "SYSTEM ERROR: API KEY MISSING."; return
         
-        # We tell the AI that the context provided IS the document content.
         system_prompt = f"""
-        ROLE: You are QR_ ACCOUNTS OS, an elite Account Strategy Operating System.
-        TONE: Professional, concise, data-driven. Use bullet points.
+        ROLE: You are QR_ ACCOUNTS OS, an elite Strategy Operating System.
+        TASK: Answer queries based STRICTLY on the knowledge base provided below.
         
-        INSTRUCTIONS:
-        You have direct access to the uploaded data below. 
-        When the user asks a question, SEARCH THIS DATA directly to find the answer.
-        Do not say "I cannot interpret documents". The documents have been converted to text for you below.
-        
-        [SECURE DATA CONTEXT]
+        [KNOWLEDGE BASE]
         {db_context}
         """
         
-        full_query = f"{system_prompt}\n\nUSER QUERY: {user_query}"
         try:
-            response = self.model.generate_content(full_query, stream=True)
+            response = self.model.generate_content(f"{system_prompt}\n\nUSER QUERY: {user_query}", stream=True)
             for chunk in response: yield chunk.text
         except Exception as e: yield f"API ERROR: {str(e)}"
 
+    def generate_one_pager(self, db_context):
+        if not self.active: return "SYSTEM ERROR: API KEY MISSING."
+        
+        prompt = f"""
+        ROLE: Senior Strategy Director.
+        TASK: Create a consolidated "Executive 1-Pager" based on ALL the data provided below.
+        
+        FORMAT:
+        1. **Executive Summary** (3-4 sentences high level)
+        2. **Key Account Risks** (Bullet points)
+        3. **Strategic Opportunities** (Bullet points)
+        4. **Financial Health / Metrics** (If available in data)
+        5. **Next 90 Days** (Action plan)
+        
+        [DATA SOURCE]
+        {db_context}
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e: return f"GENERATION ERROR: {str(e)}"
+
 # --- 4. FRONTEND COMPONENTS ---
 
-def render_sidebar(data_engine, ai_engine, pdf_engine):
+def render_sidebar(knowledge_engine):
     with st.sidebar:
         # LOGO
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        possible_paths = [
-            os.path.join(script_dir, "logo.png"),              
-            os.path.join(script_dir, "assets", "logo.png"),    
-            "logo.png"                                         
-        ]
-        logo_path = None
-        for p in possible_paths:
-            if os.path.exists(p): logo_path = p; break
-        
+        possible_paths = [os.path.join(script_dir, "logo.png"), "logo.png"]
+        logo_path = next((p for p in possible_paths if os.path.exists(p)), None)
         if logo_path: st.image(logo_path, use_container_width=True)
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v4.7
-            </div>
-            <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v5.0</div>
+            <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
-                01 // DATA INGESTION
-            </div>
-        """, unsafe_allow_html=True)
-        
-        uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed")
+        # UPLOAD
+        st.markdown("<div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:5px;'>INGEST KNOWLEDGE</div>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Upload", type=['csv', 'tsv', 'pdf'], label_visibility="collapsed")
         
         if uploaded_file:
-            if "last_upload" not in st.session_state or st.session_state.last_upload != uploaded_file.name:
-                df = None
-                
-                # --- PROCESS PDF ---
-                if uploaded_file.name.endswith('.pdf'):
-                    with st.spinner("DECODING PDF VECTOR..."):
-                        df = pdf_engine.process_pdf(uploaded_file)
-                # --- PROCESS CSV/TSV ---
-                else:
-                    sep = '\t' if uploaded_file.name.endswith('.tsv') else ','
-                    df = pd.read_csv(uploaded_file, sep=sep)
-                
-                if df is not None:
-                    # ai_engine.validate_data(df.head(3).to_string()) # Optional skip for speed
-                    data_engine.ingest_data(df, uploaded_file.name)
-                    st.session_state.last_upload = uploaded_file.name
-                    st.session_state.active_df = df
-                    st.toast(f"SYSTEM: {uploaded_file.name} INGESTED", icon="💾")
+            save_path = save_uploaded_file(uploaded_file)
+            if save_path:
+                st.toast(f"SAVED TO CORE: {uploaded_file.name}", icon="💾")
+                time.sleep(1) # Give it a sec
+                st.rerun() # Refresh so the new file is read into context
+
+        # FILE LIST
+        st.markdown("<br><div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:5px;'>ACTIVE DATASETS</div>", unsafe_allow_html=True)
+        files = os.listdir(STORAGE_DIR)
+        if files:
+            for f in files:
+                st.markdown(f"<div style='color:#888; font-size:0.8rem; border-left:2px solid #D31515; padding-left:10px; margin-bottom:5px;'>{f}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='color:#444; font-size:0.8rem;'>Memory Empty</div>", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
-                02 // SYSTEM CONTROLS
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button("CLEAR SESSION CACHE"):
-            st.session_state.messages = []
+        if st.button("WIPE MEMORY"):
+            for f in files:
+                os.remove(os.path.join(STORAGE_DIR, f))
             st.rerun()
 
-def render_dashboard_metrics():
-    status_text = "ONLINE"
-    context_text = "READY" if "active_df" in st.session_state else "WAITING"
-    green = "#4CAF50"; red = "#D31515"
-    
+def render_metrics():
+    # Count files
+    file_count = len(os.listdir(STORAGE_DIR))
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">System Status</div>
-            <div class="metric-value" style="color:{green};">{status_text}</div>
-            <div class="metric-desc">All neural modules active.</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card"><div class="metric-label">System Status</div><div class="metric-value" style="color:#4CAF50;">ONLINE</div><div class="metric-desc">Neural Engine Active</div></div>""", unsafe_allow_html=True)
     with c2:
-        ctx_color = green if context_text == "READY" else red
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Data Context</div>
-            <div class="metric-value" style="color:{ctx_color};">{context_text}</div>
-            <div class="metric-desc">{'Local vectors loaded.' if context_text == 'READY' else 'Awaiting vector inputs.'}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        color = "#4CAF50" if file_count > 0 else "#D31515"
+        st.markdown(f"""<div class="metric-card"><div class="metric-label">Knowledge Base</div><div class="metric-value" style="color:{color};">{file_count} FILES</div><div class="metric-desc">Vectors Loaded</div></div>""", unsafe_allow_html=True)
     with c3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Personality Type</div>
-            <div class="metric-value" style="color:{green};">SENIOR DIRECTOR</div>
-            <div class="metric-desc">Active Strategy Mode.</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card"><div class="metric-label">Personality</div><div class="metric-value" style="color:#4CAF50;">DIRECTOR</div><div class="metric-desc">Strategic Mode</div></div>""", unsafe_allow_html=True)
 
 # --- 5. MAIN EXECUTION ---
 
 def main():
+    init_storage()
     inject_custom_css()
-    data_engine = DataEngine()
+    
+    knowledge_engine = KnowledgeEngine()
     ai_engine = AIEngine()
-    pdf_engine = PDFEngine()
     
     if "messages" not in st.session_state: st.session_state.messages = []
 
-    if "local_loaded" not in st.session_state:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        local_file = os.path.join(script_dir, "table.tsv")
-        if os.path.exists(local_file):
-            try:
-                df_local = pd.read_csv(local_file, sep='\t')
-                data_engine.ingest_data(df_local, "table.tsv")
-                st.session_state.active_df = df_local
-                st.session_state.local_loaded = True
-                st.toast(f"AUTO-MOUNT: table.tsv DETECTED & LOADED", icon="📂")
-            except: pass
-        else: st.session_state.local_loaded = False
+    render_sidebar(knowledge_engine)
 
-    render_sidebar(data_engine, ai_engine, pdf_engine)
+    # TABS
+    tab1, tab2, tab3 = st.tabs(["// ACCOUNTS_CHAT", "// EXEC_1_PAGER", "// DATA_RECON"])
 
-    tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
-
+    # --- TAB 1: CHAT ---
     with tab1:
-        st.markdown("""
-            <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
-                <div><span class='active-session-text'>// ACTIVE SESSION</span></div>
-                <div style='font-family: "JetBrains Mono"; font-size:0.7rem; color:#555;'>{timestamp}</div>
-            </div>
-        """.format(timestamp=datetime.now().strftime("%Y-%m-%d %H:%M")), unsafe_allow_html=True)
-
-        render_dashboard_metrics()
-
-        if not st.session_state.messages:
-            st.markdown("<br><br><div style='text-align:center; color:#555; font-family:JetBrains Mono; font-size: 0.8rem;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
-
+        st.markdown(f"<div style='margin-bottom:20px;'><span class='active-session-text'>// ACTIVE SESSION: {datetime.now().strftime('%H:%M')}</span></div>", unsafe_allow_html=True)
+        render_metrics()
+        
+        # Display Messages
         for message in st.session_state.messages:
             with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🔴"):
                 st.markdown(message["content"])
 
-        if prompt := st.chat_input("ENTER STRATEGIC QUERY..."):
+        if prompt := st.chat_input("QUERY THE KNOWLEDGE BASE..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user", avatar="👤"): st.markdown(prompt)
 
             with st.chat_message("assistant", avatar="🔴"):
                 response_placeholder = st.empty()
                 full_response = ""
-                db_context = data_engine.get_schema_context()
+                # Get fresh context from disk
+                context = knowledge_engine.get_all_context()
+                
                 try:
-                    for chunk in ai_engine.stream_response(prompt, st.session_state.messages, db_context):
+                    for chunk in ai_engine.stream_response(prompt, context):
                         full_response += chunk
                         response_placeholder.markdown(full_response + "▌")
                         time.sleep(0.01)
                     response_placeholder.markdown(full_response)
                 except Exception as e:
-                    response_placeholder.markdown(f"**SYSTEM FAILURE:** {str(e)}")
-                    full_response = f"Error: {str(e)}"
+                    response_placeholder.markdown(f"**ERROR:** {str(e)}")
             st.session_state.messages.append({"role": "assistant", "content": full_response})
 
+    # --- TAB 2: EXEC 1 PAGER ---
     with tab2:
-        if "active_df" in st.session_state:
-            df = st.session_state.active_df
-            st.markdown("### DATA RECONNAISSANCE")
-            num_cols = df.select_dtypes(include=['float64', 'int64']).columns
-            if len(num_cols) > 0:
-                c1, c2 = st.columns(2)
-                with c1:
-                    fig = px.bar(df, x=df.columns[0], y=num_cols[0], template="plotly_dark")
-                    fig.update_layout(paper_bgcolor="#1a1a1a", plot_bgcolor="#1a1a1a", font_color="#E0E0E0", font_family="Roboto")
-                    fig.update_traces(marker_color='#D31515')
-                    st.plotly_chart(fig, use_container_width=True)
-                with c2: st.dataframe(df, use_container_width=True)
-            else: st.dataframe(df, use_container_width=True)
-        else: st.info("NO DATA LOADED.")
+        st.markdown("### // EXECUTIVE ONE-PAGER GENERATOR")
+        st.markdown("Generates a consolidated strategic view based on **all** currently uploaded files.")
+        
+        if st.button("GENERATE 1-PAGER"):
+            with st.spinner("SYNTHESIZING KNOWLEDGE BASE..."):
+                context = knowledge_engine.get_all_context()
+                summary = ai_engine.generate_one_pager(context)
+                st.markdown("---")
+                st.markdown(summary)
+        else:
+            st.info("Click generate to fuse all uploaded data into a single strategic document.")
+
+    # --- TAB 3: DATA RECON ---
+    with tab3:
+        st.markdown("### // RAW DATA INSPECTION")
+        files = os.listdir(STORAGE_DIR)
+        if files:
+            selected_file = st.selectbox("SELECT FILE TO INSPECT", files)
+            file_path = os.path.join(STORAGE_DIR, selected_file)
+            
+            if selected_file.endswith(".csv") or selected_file.endswith(".tsv"):
+                sep = '\t' if selected_file.endswith('.tsv') else ','
+                df = pd.read_csv(file_path, sep=sep)
+                st.dataframe(df, use_container_width=True)
+            elif selected_file.endswith(".pdf"):
+                st.warning("PDF PREVIEW NOT SUPPORTED. TEXT CONTENT IS INDEXED IN BACKEND.")
+        else:
+            st.info("NO DATA LOADED.")
 
 if __name__ == "__main__":
     main()
