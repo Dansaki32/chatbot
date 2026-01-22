@@ -61,7 +61,7 @@ def inject_custom_css():
             font-family: var(--font-body);
         }
         
-        /* REDUCE DEFAULT TOP PADDING to fix the big gap */
+        /* TIGHTER TOP SPACING */
         .block-container {
             padding-top: 2rem !important;
             padding-bottom: 2rem !important;
@@ -84,7 +84,7 @@ def inject_custom_css():
             border-right: 1px solid #333; 
         }
 
-        /* FILE UPLOADER - DARK MODE FIX */
+        /* FILE UPLOADER */
         [data-testid="stFileUploader"] {
             background-color: #111111;
             border: 1px dashed #444;
@@ -122,7 +122,7 @@ def inject_custom_css():
             box-shadow: 0 0 10px rgba(211, 21, 21, 0.4);
         }
 
-        /* 6. METRIC CARDS (UPDATED SIZE) */
+        /* 6. METRIC CARDS */
         .metric-card { 
             background: #000000; 
             border: 1px solid #222; 
@@ -130,6 +130,7 @@ def inject_custom_css():
             border-radius: 4px; 
             height: 100%; 
             transition: all 0.3s ease;
+            margin-bottom: 20px; /* Add spacing below cards */
         }
         .metric-card:hover {
             border-color: var(--accent-red);
@@ -144,7 +145,7 @@ def inject_custom_css():
         }
         .metric-value { 
             font-family: var(--font-display);
-            font-size: 1.5rem; /* REDUCED FROM 2.2rem */
+            font-size: 1.5rem; 
             color: var(--text-white); 
         }
         .metric-desc { 
@@ -290,11 +291,12 @@ def render_sidebar(data_engine, ai_engine):
             
         st.markdown("""
             <div style='font-family: "Dolce Vita Light", sans-serif; font-size: 0.75rem; color: #888; letter-spacing: 3px; margin-top: 10px; margin-bottom: 20px; text-transform: uppercase;'>
-                Accounts OS v3.9
+                Accounts OS v4.0
             </div>
             <div style='border-top: 1px solid #333; margin-bottom: 25px;'></div>
         """, unsafe_allow_html=True)
 
+        # Upload Section (White Text)
         st.markdown("""
             <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 01 // DATA INGESTION
@@ -318,6 +320,7 @@ def render_sidebar(data_engine, ai_engine):
 
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Controls Section (White Text)
         st.markdown("""
             <div style='font-family: "Dolce Vita Bold", sans-serif; color:#FFFFFF; font-size:0.85rem; margin-bottom:10px; letter-spacing: 1px;'>
                 02 // SYSTEM CONTROLS
@@ -328,7 +331,7 @@ def render_sidebar(data_engine, ai_engine):
             st.session_state.messages = []
             st.rerun()
 
-def render_zero_state():
+def render_dashboard_metrics():
     # Dynamic Status
     status_text = "ONLINE"
     context_text = "READY" if "active_df" in st.session_state else "WAITING"
@@ -336,7 +339,6 @@ def render_zero_state():
     green = "#4CAF50"
     red = "#D31515"
     
-    # REMOVED <br><br> to tighten the gap
     c1, c2, c3 = st.columns(3)
     
     with c1:
@@ -366,8 +368,6 @@ def render_zero_state():
             <div class="metric-desc">Active Strategy Mode.</div>
         </div>
         """, unsafe_allow_html=True)
-        
-    st.markdown("<br><br><div style='text-align:center; color:#555; font-family:JetBrains Mono; font-size: 0.8rem;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
 
 # --- 5. MAIN EXECUTION ---
 
@@ -402,6 +402,7 @@ def main():
     tab1, tab2 = st.tabs(["// ACCOUNTS_CHAT", "// DATA_RECON"])
 
     with tab1:
+        # Header with pulsing active session
         st.markdown("""
             <div style='display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;'>
                 <div>
@@ -413,9 +414,14 @@ def main():
             </div>
         """.format(timestamp=datetime.now().strftime("%Y-%m-%d %H:%M")), unsafe_allow_html=True)
 
-        if not st.session_state.messages:
-            render_zero_state()
+        # 1. ALWAYS RENDER METRICS (Dashboard feel)
+        render_dashboard_metrics()
 
+        # 2. RENDER WELCOME TEXT ONLY IF EMPTY
+        if not st.session_state.messages:
+            st.markdown("<br><br><div style='text-align:center; color:#555; font-family:JetBrains Mono; font-size: 0.8rem;'>INITIALIZE QUERY SEQUENCE BELOW...</div>", unsafe_allow_html=True)
+
+        # 3. RENDER MESSAGES
         for message in st.session_state.messages:
             with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🔴"):
                 st.markdown(message["content"])
