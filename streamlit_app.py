@@ -4,18 +4,18 @@ import google.generativeai as genai
 import sqlite3
 import time
 import plotly.express as px
-import os  # <--- Essential for finding your local file
+import os
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
 st.set_page_config(
-    page_title="QR_ Accounts OS",
+    page_title="QR_ STRATEGY OS",
     page_icon="🔴",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. VISUAL CORE (The Dark/Grey Theme) ---
+# --- 2. VISUAL CORE (Updated for Red Buttons) ---
 def inject_custom_css():
     st.markdown("""
     <style>
@@ -39,6 +39,19 @@ def inject_custom_css():
         [data-testid="stFileUploader"] { padding: 1rem; background: var(--accent-black); border: 1px solid #444; border-radius: 4px; }
         [data-testid="stFileUploader"] div { color: var(--text-gray) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--highlight-red) !important; color: white !important; border: none; font-weight: bold; }
+
+        /* SIDEBAR BUTTONS - FORCE RED TEXT */
+        [data-testid="stSidebar"] .stButton button {
+            color: var(--highlight-red) !important; /* <--- THIS MAKES THE FONT RED */
+            border-color: #333 !important;
+            background-color: transparent !important;
+            font-weight: bold !important;
+            transition: all 0.3s ease;
+        }
+        [data-testid="stSidebar"] .stButton button:hover {
+            border-color: var(--highlight-red) !important;
+            box-shadow: 0 0 10px rgba(211, 21, 21, 0.2);
+        }
 
         /* INPUT & CHAT */
         .stChatInput { background: transparent; padding-bottom: 2rem; }
@@ -79,7 +92,6 @@ class DataEngine:
                          (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), filename, status, row_count))
 
     def ingest_data(self, df, filename):
-        # Sanitize table name
         table_name = "data_" + filename.split('.')[0].replace(" ", "_").lower()
         with self.get_connection() as conn:
             df.to_sql(table_name, conn, if_exists='replace', index=False)
@@ -155,7 +167,6 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("---")
         
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>01 // DATA INGESTION</div>", unsafe_allow_html=True)
-        # Allows Drag & Drop override
         uploaded_file = st.file_uploader("DROP FILE", type=['csv', 'tsv'], label_visibility="collapsed")
         
         if uploaded_file:
@@ -174,7 +185,9 @@ def render_sidebar(data_engine, ai_engine):
         st.markdown("<br>", unsafe_allow_html=True)
         
         st.markdown("<div style='color:#D31515; font-weight:bold; font-size:0.8rem; margin-bottom:10px;'>02 // SYSTEM CONTROLS</div>", unsafe_allow_html=True)
-        if st.button("<div style='color:#D31515;'>03 // CLEAR SESSION CACHE</div>"):
+        
+        # --- FIXED BUTTON ---
+        if st.button("CLEAR SESSION CACHE"):
             st.session_state.messages = []
             st.rerun()
 
@@ -208,9 +221,9 @@ def render_zero_state():
     with c3:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Personality level</div>
-            <div class="metric-value" style="color:#D31515;">Senior Director</div>
-            <div class="metric-desc">Active.</div>
+            <div class="metric-label">Security Level</div>
+            <div class="metric-value" style="color:#D31515;">ALPHA</div>
+            <div class="metric-desc">Senior Director authorization.</div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -224,25 +237,18 @@ def main():
     data_engine = DataEngine()
     ai_engine = AIEngine()
     
-    # Session State Init
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # --- NEW: AUTO-DETECT LOCAL TABLE.TSV ---
+    # --- AUTO-DETECT LOCAL TABLE.TSV ---
     if "local_loaded" not in st.session_state:
-        # Check current directory for table.tsv
         local_file = "table.tsv"
         if os.path.exists(local_file):
             try:
-                # Read TSV
                 df_local = pd.read_csv(local_file, sep='\t')
-                
-                # Ingest quietly
                 data_engine.ingest_data(df_local, local_file)
                 st.session_state.active_df = df_local
                 st.session_state.local_loaded = True
-                
-                # Verify schema with AI (optional, non-blocking)
                 st.toast(f"AUTO-MOUNT: {local_file} DETECTED & LOADED", icon="📂")
             except Exception as e:
                 st.toast(f"AUTO-MOUNT ERROR: {e}", icon="⚠️")
@@ -251,7 +257,7 @@ def main():
 
     render_sidebar(data_engine, ai_engine)
 
-    tab1, tab2 = st.tabs(["// Account_CHAT", "// DATA_RECON"])
+    tab1, tab2 = st.tabs(["// STRATEGY_CHAT", "// DATA_RECON"])
 
     with tab1:
         st.markdown("""
@@ -300,7 +306,6 @@ def main():
             df = st.session_state.active_df
             st.markdown("### DATA RECONNAISSANCE")
             
-            # Simple numeric check for plotting
             num_cols = df.select_dtypes(include=['float64', 'int64']).columns
             
             if len(num_cols) > 0:
