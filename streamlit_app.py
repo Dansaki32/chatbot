@@ -7,7 +7,7 @@ import io
 import json
 import time
 import pypdf
-import os  # <--- FIXED: ADDED MISSING IMPORT
+import os  # <--- FIXED: Prevents NameError crash
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -58,32 +58,28 @@ def inject_custom_css():
         [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
         /* --- GLOBAL BUTTON STYLING (FIXES WHITE BUTTONS) --- */
-        /* Targets ALL buttons (Sidebar + Main Page) */
         div.stButton > button { 
             background-color: #000000 !important; 
             color: #AAAAAA !important; 
             border: 1px solid #333 !important; 
             font-family: var(--font-display) !important; 
             text-transform: uppercase; 
-            font-size: 0.8rem !important; /* Slightly larger for main page readability */
+            font-size: 0.8rem !important;
             transition: all 0.2s ease;
         }
-        
-        /* Hover State */
         div.stButton > button:hover { 
             border-color: var(--accent-red) !important; 
             color: #FFFFFF !important; 
             box-shadow: 0 0 8px rgba(211, 21, 21, 0.4);
         }
-
-        /* Primary/Active Buttons (Red Filled) */
+        /* Active State */
         div.stButton > button[kind="primary"] {
             background-color: var(--accent-red) !important;
             color: #FFFFFF !important;
             border: 1px solid var(--accent-red) !important;
         }
 
-        /* Specific fix for Sidebar Micro-Buttons to keep them small */
+        /* MICRO BUTTONS FOR SIDEBAR */
         [data-testid="stSidebar"] div[data-testid="column"] button {
             font-size: 0.6rem !important; 
             padding: 0px !important;
@@ -111,23 +107,18 @@ def inject_custom_css():
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. BACKEND LOGIC (GOOGLE CLOUD STORAGE) ---
+# --- 3. BACKEND LOGIC (CLOUD + LOCAL) ---
 
-# !!! CHANGE THIS TO YOUR BUCKET NAME !!!
-BUCKET_NAME = "accounts_data_store" 
+# !!! REPLACE WITH YOUR BUCKET NAME !!!
+BUCKET_NAME = "plenary-matrix-460717-u7"  # Update this if your bucket name is different
 METADATA_BLOB = "metadata.json"
 
 def get_gcs_client():
-    """Authenticates using Streamlit Secrets."""
     try:
-        if "gcp_service_account" not in st.secrets:
-            return None
-        creds = service_account.Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"]
-        )
+        if "gcp_service_account" not in st.secrets: return None
+        creds = service_account.Credentials.from_service_account_info(st.secrets["gcp_service_account"])
         return storage.Client(credentials=creds, project=creds.project_id)
-    except Exception as e:
-        return None
+    except Exception: return None
 
 def load_metadata(bucket):
     blob = bucket.blob(METADATA_BLOB)
@@ -149,7 +140,6 @@ def save_uploaded_file(uploaded_file):
         uploaded_file.seek(0)
         blob.upload_from_file(uploaded_file)
         
-        # Default to Active
         meta = load_metadata(bucket)
         meta[uploaded_file.name] = True
         save_metadata(bucket, meta)
@@ -181,39 +171,58 @@ def set_file_status(filename, status):
 
 class KnowledgeEngine:
     def get_all_context(self):
-        client = get_gcs_client()
-        if not client: return "ERROR: NO CLOUD CONNECTION. CHECK SECRETS."
+        context = ""
         
-        bucket = client.bucket(BUCKET_NAME)
-        blobs = list(bucket.list_blobs())
-        meta = load_metadata(bucket)
+        # 1. READ LOCAL 'table.tsv'
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        local_file = os.path.join(script_dir, "table.tsv")
         
-        files = [b.name for b in blobs if b.name != METADATA_BLOB]
-        active_files = [f for f in files if meta.get(f, True)]
-        
-        if not active_files: return "NO ACTIVE DATA IN CLOUD."
-        
-        context = f"/// CLOUD KNOWLEDGE BASE ({len(active_files)} FILES) ///\n\n"
-        
-        for filename in active_files:
-            blob = bucket.blob(filename)
-            context += f"=== FILE: {filename} ===\n"
+        if os.path.exists(local_file):
             try:
-                content_bytes = blob.download_as_bytes()
-                if filename.endswith(".pdf"):
-                    pdf_file = io.BytesIO(content_bytes)
-                    reader = pypdf.PdfReader(pdf_file)
-                    text = ""
-                    for page in reader.pages:
-                        text += page.extract_text() + "\n"
-                    context += f"{text[:15000]} ... [TRUNCATED]\n\n"
-                elif filename.endswith(".csv") or filename.endswith(".tsv"):
-                    csv_str = content_bytes.decode("utf-8")
-                    sep = '\t' if filename.endswith('.tsv') else ','
-                    df = pd.read_csv(io.StringIO(csv_str), sep=sep)
-                    context += df.to_string(index=False) + "\n\n"
+                df_local = pd.read_csv(local_file, sep='\t')
+                context += "/// LOCAL SYSTEM DATA (table.tsv) ///\n"
+                context += df_local.to_string(index=False) + "\n\n"
             except Exception as e:
-                context += f"[READ ERROR: {str(e)}]\n\n"
+                context += f"[ERROR READING LOCAL table.tsv: {str(e)}]\n\n"
+        else:
+            context += "[SYSTEM NOTE: No local table.tsv found]\n\n"
+
+        # 2. READ GOOGLE CLOUD STORAGE
+        client = get_gcs_client()
+        if client:
+            try:
+                bucket = client.bucket(BUCKET_NAME)
+                blobs = list(bucket.list_blobs())
+                meta = load_metadata(bucket)
+                files = [b.name for b in blobs if b.name != METADATA_BLOB]
+                active_files = [f for f in files if meta.get(f, True)]
+                
+                if active_files:
+                    context += f"/// CLOUD KNOWLEDGE BASE ({len(active_files)} FILES) ///\n\n"
+                    for filename in active_files:
+                        blob = bucket.blob(filename)
+                        context += f"=== FILE: {filename} ===\n"
+                        try:
+                            content_bytes = blob.download_as_bytes()
+                            if filename.endswith(".pdf"):
+                                pdf_file = io.BytesIO(content_bytes)
+                                reader = pypdf.PdfReader(pdf_file)
+                                text = ""
+                                for page in reader.pages:
+                                    text += page.extract_text() + "\n"
+                                context += f"{text[:15000]} ... [TRUNCATED]\n\n"
+                            elif filename.endswith(".csv") or filename.endswith(".tsv"):
+                                csv_str = content_bytes.decode("utf-8")
+                                sep = '\t' if filename.endswith('.tsv') else ','
+                                df = pd.read_csv(io.StringIO(csv_str), sep=sep)
+                                context += df.to_string(index=False) + "\n\n"
+                        except Exception as e:
+                            context += f"[READ ERROR: {str(e)}]\n\n"
+            except Exception as e:
+                context += f"[CLOUD CONNECTION ERROR: {str(e)}]\n"
+        else:
+            context += "[SYSTEM WARN: No Cloud Connection]\n"
+            
         return context
 
 class AIEngine:
@@ -229,7 +238,13 @@ class AIEngine:
         if not self.active: yield "SYSTEM ERROR: API KEY MISSING."; return
         system_prompt = f"""
         ROLE: You are QR_ ACCOUNTS OS, an elite Strategy Operating System.
-        TASK: Answer based STRICTLY on the knowledge base.
+        TASK: Answer user queries by synthesizing data from the provided KNOWLEDGE BASE below.
+        
+        INSTRUCTIONS:
+        1. Search the 'LOCAL SYSTEM DATA' and 'CLOUD KNOWLEDGE BASE' sections provided.
+        2. Combine insights from both sources if relevant.
+        3. If the answer is found in a file, cite the filename.
+        
         [KNOWLEDGE BASE]
         {db_context}
         """
@@ -244,9 +259,11 @@ class AIEngine:
         if not self.active: return "SYSTEM ERROR: API KEY MISSING."
         prompt = f"""
         ROLE: Strategy Director.
-        TASK: Consolidated Executive 1-Pager based on ALL data below.
+        TASK: Consolidated Executive 1-Pager.
+        INSTRUCTIONS: Synthesize ALL data from the Context (Local + Cloud).
         FORMAT: 1. Summary, 2. Risks, 3. Opportunities, 4. Metrics, 5. Action Plan.
-        [DATA]
+        
+        [DATA CONTEXT]
         {db_context}
         """
         try:
@@ -268,7 +285,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v6.2 CLOUD</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v6.3</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -285,9 +302,9 @@ def render_sidebar(knowledge_engine):
                 time.sleep(1)
                 st.rerun()
             else:
-                st.error("Upload Failed: Check Credentials.")
+                st.error("Upload Failed.")
 
-        # CLOUD DATASETS LIST
+        # DATASET LIST
         st.markdown("<br><div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:10px;'>CLOUD DATASETS</div>", unsafe_allow_html=True)
         
         client = get_gcs_client()
@@ -302,16 +319,15 @@ def render_sidebar(knowledge_engine):
             if files:
                 for f in files:
                     is_active = meta.get(f, True)
-                    
                     status_icon = "🟢" if is_active else "⚫"
                     opacity = "1.0" if is_active else "0.5"
+                    
                     st.markdown(f"""
                     <div style="font-size:0.8rem; color:white; opacity:{opacity}; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                         {status_icon} {f}
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # 3-BUTTON ROW
                     c1, c2, c3 = st.columns([1, 1, 1.5])
                     with c1:
                         if st.button("ON", key=f"on_{f}", type="primary" if is_active else "secondary"):
@@ -325,12 +341,11 @@ def render_sidebar(knowledge_engine):
                         if st.button("REMOVE", key=f"del_{f}", type="secondary"):
                             delete_file(f)
                             st.rerun()
-                    
                     st.markdown("<div style='margin-bottom:15px; border-bottom:1px solid #222;'></div>", unsafe_allow_html=True)
             else:
                 st.markdown("<div style='color:#444; font-size:0.8rem;'>Cloud Storage Empty</div>", unsafe_allow_html=True)
         else:
-            st.error("No Cloud Connection.")
+            st.error("Cloud Disconnected")
 
         # WIPE MEMORY
         st.markdown("<br><br>", unsafe_allow_html=True)
@@ -395,6 +410,7 @@ def main():
     with tab1:
         st.markdown(f"<div style='margin-bottom:20px;'><span class='active-session-text'>// ACTIVE SESSION: {datetime.now().strftime('%H:%M')}</span></div>", unsafe_allow_html=True)
         render_metrics()
+        
         for message in st.session_state.messages:
             with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🔴"):
                 st.markdown(message["content"])
