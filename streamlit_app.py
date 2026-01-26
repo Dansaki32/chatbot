@@ -7,7 +7,7 @@ import io
 import json
 import time
 import pypdf
-import os  # <--- CRITICAL IMPORT FOR THE CRASH FIX
+import os  # <--- FIXED: ADDED MISSING IMPORT
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -57,34 +57,33 @@ def inject_custom_css():
         [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
-        /* --- STRICT BUTTON STYLING (NO WHITE BUTTONS) --- */
-        
-        /* 1. Default Sidebar Buttons (Grey/Black) */
-        [data-testid="stSidebar"] button { 
-            background-color: #111111 !important; 
+        /* --- GLOBAL BUTTON STYLING (FIXES WHITE BUTTONS) --- */
+        /* Targets ALL buttons (Sidebar + Main Page) */
+        div.stButton > button { 
+            background-color: #000000 !important; 
             color: #AAAAAA !important; 
             border: 1px solid #333 !important; 
             font-family: var(--font-display) !important; 
             text-transform: uppercase; 
-            font-size: 0.7rem !important;
+            font-size: 0.8rem !important; /* Slightly larger for main page readability */
             transition: all 0.2s ease;
         }
         
-        /* 2. Hover State */
-        [data-testid="stSidebar"] button:hover { 
+        /* Hover State */
+        div.stButton > button:hover { 
             border-color: var(--accent-red) !important; 
             color: #FFFFFF !important; 
-            box-shadow: 0 0 5px rgba(211, 21, 21, 0.5);
+            box-shadow: 0 0 8px rgba(211, 21, 21, 0.4);
         }
 
-        /* 3. Active/Primary State (Bright Red) */
-        [data-testid="stSidebar"] button[kind="primary"] {
+        /* Primary/Active Buttons (Red Filled) */
+        div.stButton > button[kind="primary"] {
             background-color: var(--accent-red) !important;
             color: #FFFFFF !important;
             border: 1px solid var(--accent-red) !important;
         }
 
-        /* 4. Micro-Sizing for File Controls */
+        /* Specific fix for Sidebar Micro-Buttons to keep them small */
         [data-testid="stSidebar"] div[data-testid="column"] button {
             font-size: 0.6rem !important; 
             padding: 0px !important;
@@ -269,7 +268,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v6.1 CLOUD</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v6.2 CLOUD</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -294,13 +293,11 @@ def render_sidebar(knowledge_engine):
         client = get_gcs_client()
         if client:
             bucket = client.bucket(BUCKET_NAME)
-            # Use a safe list attempt to prevent crash if bucket is empty/missing
             try:
                 blobs = list(bucket.list_blobs())
                 meta = load_metadata(bucket)
                 files = [b.name for b in blobs if b.name != METADATA_BLOB]
-            except:
-                files = []
+            except: files = []
 
             if files:
                 for f in files:
@@ -317,17 +314,14 @@ def render_sidebar(knowledge_engine):
                     # 3-BUTTON ROW
                     c1, c2, c3 = st.columns([1, 1, 1.5])
                     with c1:
-                        # ON Button
                         if st.button("ON", key=f"on_{f}", type="primary" if is_active else "secondary"):
                             set_file_status(f, True)
                             st.rerun()
                     with c2:
-                        # OFF Button
                         if st.button("OFF", key=f"off_{f}", type="primary" if not is_active else "secondary"):
                             set_file_status(f, False)
                             st.rerun()
                     with c3:
-                        # REMOVE Button
                         if st.button("REMOVE", key=f"del_{f}", type="secondary"):
                             delete_file(f)
                             st.rerun()
