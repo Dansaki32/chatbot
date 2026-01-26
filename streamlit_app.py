@@ -7,6 +7,7 @@ import io
 import json
 import time
 import pypdf
+import os  # <--- CRITICAL IMPORT FOR THE CRASH FIX
 from datetime import datetime
 
 # --- 1. CONFIG & SYSTEM SETUP ---
@@ -56,19 +57,41 @@ def inject_custom_css():
         [data-testid="stFileUploader"] div, [data-testid="stFileUploader"] p, [data-testid="stFileUploader"] small { color: #FFFFFF !important; font-family: var(--font-body) !important; }
         [data-testid="stFileUploader"] button { background-color: var(--accent-red) !important; color: white !important; border: none; font-family: var(--font-display); }
 
-        /* BUTTONS (GLOBAL) */
-        div.stButton > button { 
-            background-color: #000000 !important; color: #AAAAAA !important; 
-            border: 1px solid #333 !important; font-family: var(--font-display) !important; 
-            text-transform: uppercase; font-size: 0.7rem !important; transition: all 0.2s ease;
-        }
-        div.stButton > button:hover { border-color: var(--accent-red) !important; color: #FFFFFF !important; }
+        /* --- STRICT BUTTON STYLING (NO WHITE BUTTONS) --- */
         
-        /* Primary Buttons (Active State) */
-        div.stButton > button[kind="primary"] { 
-            background-color: var(--accent-red) !important; 
+        /* 1. Default Sidebar Buttons (Grey/Black) */
+        [data-testid="stSidebar"] button { 
+            background-color: #111111 !important; 
+            color: #AAAAAA !important; 
+            border: 1px solid #333 !important; 
+            font-family: var(--font-display) !important; 
+            text-transform: uppercase; 
+            font-size: 0.7rem !important;
+            transition: all 0.2s ease;
+        }
+        
+        /* 2. Hover State */
+        [data-testid="stSidebar"] button:hover { 
+            border-color: var(--accent-red) !important; 
             color: #FFFFFF !important; 
-            border: 1px solid var(--accent-red) !important; 
+            box-shadow: 0 0 5px rgba(211, 21, 21, 0.5);
+        }
+
+        /* 3. Active/Primary State (Bright Red) */
+        [data-testid="stSidebar"] button[kind="primary"] {
+            background-color: var(--accent-red) !important;
+            color: #FFFFFF !important;
+            border: 1px solid var(--accent-red) !important;
+        }
+
+        /* 4. Micro-Sizing for File Controls */
+        [data-testid="stSidebar"] div[data-testid="column"] button {
+            font-size: 0.6rem !important; 
+            padding: 0px !important;
+            min-height: 24px !important; 
+            height: 24px !important; 
+            margin-top: 0px !important; 
+            width: 100%;
         }
 
         /* METRIC CARDS */
@@ -86,19 +109,12 @@ def inject_custom_css():
         
         .active-session-text { color: var(--accent-red); font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 1px; animation: pulse-red 2s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        
-        /* MICRO BUTTONS FOR SIDEBAR */
-        [data-testid="stSidebar"] div[data-testid="column"] button {
-            font-size: 0.6rem !important; padding: 0px 5px !important;
-            min-height: 20px !important; height: 24px !important; line-height: 1 !important;
-            margin-top: 0px !important; width: 100%;
-        }
     </style>
     """, unsafe_allow_html=True)
 
 # --- 3. BACKEND LOGIC (GOOGLE CLOUD STORAGE) ---
 
-# !!! IMPORTANT: CHANGE THIS TO YOUR BUCKET NAME !!!
+# !!! CHANGE THIS TO YOUR BUCKET NAME !!!
 BUCKET_NAME = "qr-accounts-os-memory" 
 METADATA_BLOB = "metadata.json"
 
@@ -107,7 +123,6 @@ def get_gcs_client():
     try:
         if "gcp_service_account" not in st.secrets:
             return None
-            
         creds = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"]
         )
@@ -129,18 +144,16 @@ def save_metadata(bucket, data):
 def save_uploaded_file(uploaded_file):
     client = get_gcs_client()
     if not client: return False
-    
     try:
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(uploaded_file.name)
         uploaded_file.seek(0)
         blob.upload_from_file(uploaded_file)
         
-        # Set default active
+        # Default to Active
         meta = load_metadata(bucket)
         meta[uploaded_file.name] = True
         save_metadata(bucket, meta)
-        
         return True
     except: return False
 
@@ -188,7 +201,6 @@ class KnowledgeEngine:
             context += f"=== FILE: {filename} ===\n"
             try:
                 content_bytes = blob.download_as_bytes()
-                
                 if filename.endswith(".pdf"):
                     pdf_file = io.BytesIO(content_bytes)
                     reader = pypdf.PdfReader(pdf_file)
@@ -196,7 +208,6 @@ class KnowledgeEngine:
                     for page in reader.pages:
                         text += page.extract_text() + "\n"
                     context += f"{text[:15000]} ... [TRUNCATED]\n\n"
-                    
                 elif filename.endswith(".csv") or filename.endswith(".tsv"):
                     csv_str = content_bytes.decode("utf-8")
                     sep = '\t' if filename.endswith('.tsv') else ','
@@ -204,7 +215,6 @@ class KnowledgeEngine:
                     context += df.to_string(index=False) + "\n\n"
             except Exception as e:
                 context += f"[READ ERROR: {str(e)}]\n\n"
-                
         return context
 
 class AIEngine:
@@ -228,7 +238,7 @@ class AIEngine:
             response = self.model.generate_content(f"{system_prompt}\n\nUSER QUERY: {user_query}", stream=True)
             for chunk in response: yield chunk.text
         except Exception as e: 
-            if "429" in str(e): yield "⚠️ SYSTEM OVERLOAD (429)."
+            if "429" in str(e): yield "⚠️ SYSTEM OVERLOAD (429): Rate limit exceeded."
             else: yield f"API ERROR: {str(e)}"
 
     def generate_one_pager(self, db_context):
@@ -259,7 +269,7 @@ def render_sidebar(knowledge_engine):
         else: st.markdown("<h1 style='color:white;'>QR_</h1>", unsafe_allow_html=True)
             
         st.markdown("""
-            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v6.0 CLOUD</div>
+            <div style='font-family: "Dolce Vita Bold", sans-serif; color:white; font-size:0.8rem; margin-top:20px;'>ACCOUNTS OS v6.1 CLOUD</div>
             <div style='border-top: 1px solid #333; margin-bottom: 20px;'></div>
         """, unsafe_allow_html=True)
 
@@ -276,7 +286,7 @@ def render_sidebar(knowledge_engine):
                 time.sleep(1)
                 st.rerun()
             else:
-                st.error("Upload Failed: Check Cloud Credentials.")
+                st.error("Upload Failed: Check Credentials.")
 
         # CLOUD DATASETS LIST
         st.markdown("<br><div style='color:white; font-family:var(--font-display); font-size:0.8rem; margin-bottom:10px;'>CLOUD DATASETS</div>", unsafe_allow_html=True)
@@ -284,10 +294,14 @@ def render_sidebar(knowledge_engine):
         client = get_gcs_client()
         if client:
             bucket = client.bucket(BUCKET_NAME)
-            blobs = list(bucket.list_blobs())
-            meta = load_metadata(bucket)
-            files = [b.name for b in blobs if b.name != METADATA_BLOB]
-            
+            # Use a safe list attempt to prevent crash if bucket is empty/missing
+            try:
+                blobs = list(bucket.list_blobs())
+                meta = load_metadata(bucket)
+                files = [b.name for b in blobs if b.name != METADATA_BLOB]
+            except:
+                files = []
+
             if files:
                 for f in files:
                     is_active = meta.get(f, True)
@@ -300,16 +314,20 @@ def render_sidebar(knowledge_engine):
                     </div>
                     """, unsafe_allow_html=True)
                     
+                    # 3-BUTTON ROW
                     c1, c2, c3 = st.columns([1, 1, 1.5])
                     with c1:
+                        # ON Button
                         if st.button("ON", key=f"on_{f}", type="primary" if is_active else "secondary"):
                             set_file_status(f, True)
                             st.rerun()
                     with c2:
+                        # OFF Button
                         if st.button("OFF", key=f"off_{f}", type="primary" if not is_active else "secondary"):
                             set_file_status(f, False)
                             st.rerun()
                     with c3:
+                        # REMOVE Button
                         if st.button("REMOVE", key=f"del_{f}", type="secondary"):
                             delete_file(f)
                             st.rerun()
@@ -335,8 +353,7 @@ def render_sidebar(knowledge_engine):
                 if st.button("YES", type="primary"):
                     client = get_gcs_client()
                     bucket = client.bucket(BUCKET_NAME)
-                    for blob in bucket.list_blobs():
-                        blob.delete()
+                    for blob in bucket.list_blobs(): blob.delete()
                     st.session_state.wipe_confirm = False
                     st.rerun()
             with c_no:
@@ -353,11 +370,13 @@ def render_metrics():
     client = get_gcs_client()
     active_count = 0
     if client:
-        bucket = client.bucket(BUCKET_NAME)
-        blobs = list(bucket.list_blobs())
-        meta = load_metadata(bucket)
-        files = [b.name for b in blobs if b.name != METADATA_BLOB]
-        active_count = sum(1 for f in files if meta.get(f, True))
+        try:
+            bucket = client.bucket(BUCKET_NAME)
+            blobs = list(bucket.list_blobs())
+            meta = load_metadata(bucket)
+            files = [b.name for b in blobs if b.name != METADATA_BLOB]
+            active_count = sum(1 for f in files if meta.get(f, True))
+        except: pass
     
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown(f"""<div class="metric-card"><div class="metric-label">System Status</div><div class="metric-value" style="color:#4CAF50;">ONLINE</div><div class="metric-desc">Neural Engine Active</div></div>""", unsafe_allow_html=True)
@@ -370,9 +389,8 @@ def render_metrics():
 
 def main():
     inject_custom_css()
-    
     if "messages" not in st.session_state: st.session_state.messages = []
-
+    
     knowledge_engine = KnowledgeEngine()
     ai_engine = AIEngine()
 
@@ -383,7 +401,6 @@ def main():
     with tab1:
         st.markdown(f"<div style='margin-bottom:20px;'><span class='active-session-text'>// ACTIVE SESSION: {datetime.now().strftime('%H:%M')}</span></div>", unsafe_allow_html=True)
         render_metrics()
-        
         for message in st.session_state.messages:
             with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🔴"):
                 st.markdown(message["content"])
@@ -416,9 +433,7 @@ def main():
                 st.markdown(summary)
 
     with tab3:
-        st.markdown("### // RAW DATA INSPECTION")
-        # Simplified for Cloud
-        st.info("Direct cloud data preview is minimized for speed. Use the Chat or 1-Pager to interact with data.")
+        st.info("Cloud data inspection is currently minimized for performance.")
 
 if __name__ == "__main__":
     main()
