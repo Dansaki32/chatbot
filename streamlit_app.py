@@ -114,7 +114,7 @@ def inject_custom_css():
 # --- 3. BACKEND LOGIC (GOOGLE CLOUD STORAGE) ---
 
 # !!! CHANGE THIS TO YOUR BUCKET NAME !!!
-BUCKET_NAME = "qr-accounts-os-memory" 
+BUCKET_NAME = "accounts_data_store" 
 METADATA_BLOB = "metadata.json"
 
 def get_gcs_client():
