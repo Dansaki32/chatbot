@@ -133,7 +133,9 @@ def save_metadata(bucket, data):
 
 def save_uploaded_file(uploaded_file):
     client = get_gcs_client()
-    if not client: return False
+    if not client: 
+        print("DEBUG: GCS Client failed to initialize. Check your secrets.")
+        return False
     try:
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(uploaded_file.name)
@@ -144,7 +146,9 @@ def save_uploaded_file(uploaded_file):
         meta[uploaded_file.name] = True
         save_metadata(bucket, meta)
         return True
-    except: return False
+    except Exception as e:
+        print(f"DEBUG: Upload Error: {e}") # This will show in your terminal/logs
+        return False
 
 def delete_file(filename):
     client = get_gcs_client()
