@@ -134,20 +134,25 @@ def save_metadata(bucket, data):
 def save_uploaded_file(uploaded_file):
     client = get_gcs_client()
     if not client: 
-        print("DEBUG: GCS Client failed to initialize. Check your secrets.")
+        st.error("GCS Client Connection Failed")
         return False
     try:
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(uploaded_file.name)
+        
+        # FIX: Set chunk size to 5MB to prevent PC from freezing/crashing on upload
+        blob.chunk_size = 5 * 1024 * 1024 
+        
         uploaded_file.seek(0)
-        blob.upload_from_file(uploaded_file)
+        # Stream the file directly to GCS instead of loading it all into RAM first
+        blob.upload_from_file(uploaded_file, content_type=uploaded_file.type)
         
         meta = load_metadata(bucket)
         meta[uploaded_file.name] = True
         save_metadata(bucket, meta)
         return True
     except Exception as e:
-        print(f"DEBUG: Upload Error: {e}") # This will show in your terminal/logs
+        st.error(f"System Error: {str(e)}")
         return False
 
 def delete_file(filename):
@@ -176,59 +181,43 @@ def set_file_status(filename, status):
 class KnowledgeEngine:
     def get_all_context(self):
         context = ""
-        
-        # 1. READ LOCAL 'table.tsv'
+        # 1. READ LOCAL 'table.tsv' (Safe, small file)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         local_file = os.path.join(script_dir, "table.tsv")
         
         if os.path.exists(local_file):
             try:
                 df_local = pd.read_csv(local_file, sep='\t')
-                context += "/// LOCAL SYSTEM DATA (table.tsv) ///\n"
-                context += df_local.to_string(index=False) + "\n\n"
-            except Exception as e:
-                context += f"[ERROR READING LOCAL table.tsv: {str(e)}]\n\n"
-        else:
-            context += "[SYSTEM NOTE: No local table.tsv found]\n\n"
+                context += f"/// LOCAL SYSTEM DATA ///\n{df_local.to_string(index=False)}\n\n"
+            except Exception: pass
 
-        # 2. READ GOOGLE CLOUD STORAGE
+        # 2. READ GCS (With Memory Safeguards)
         client = get_gcs_client()
         if client:
             try:
                 bucket = client.bucket(BUCKET_NAME)
-                blobs = list(bucket.list_blobs())
                 meta = load_metadata(bucket)
-                files = [b.name for b in blobs if b.name != METADATA_BLOB]
-                active_files = [f for f in files if meta.get(f, True)]
+                # Only list blobs if they are marked 'True' (active) in metadata
+                blobs = list(bucket.list_blobs())
+                active_files = [b for b in blobs if meta.get(b.name, True) and b.name != METADATA_BLOB]
                 
-                if active_files:
-                    context += f"/// CLOUD KNOWLEDGE BASE ({len(active_files)} FILES) ///\n\n"
-                    for filename in active_files:
-                        blob = bucket.blob(filename)
-                        context += f"=== FILE: {filename} ===\n"
-                        try:
-                            content_bytes = blob.download_as_bytes()
-                            if filename.endswith(".pdf"):
-                                pdf_file = io.BytesIO(content_bytes)
-                                reader = pypdf.PdfReader(pdf_file)
-                                text = ""
-                                for page in reader.pages:
-                                    text += page.extract_text() + "\n"
-                                context += f"{text[:15000]} ... [TRUNCATED]\n\n"
-                            elif filename.endswith(".csv") or filename.endswith(".tsv"):
-                                csv_str = content_bytes.decode("utf-8")
-                                sep = '\t' if filename.endswith('.tsv') else ','
-                                df = pd.read_csv(io.StringIO(csv_str), sep=sep)
-                                context += df.to_string(index=False) + "\n\n"
-                        except Exception as e:
-                            context += f"[READ ERROR: {str(e)}]\n\n"
+                for blob in active_files:
+                    # FIX: Limit text extraction size to prevent CPU/RAM blowout
+                    content_bytes = blob.download_as_bytes()
+                    if blob.name.endswith(".pdf"):
+                        reader = pypdf.PdfReader(io.BytesIO(content_bytes))
+                        # Only take first 5 pages to save memory
+                        text = "".join([p.extract_text() for p in reader.pages[:5]])
+                        context += f"=== FILE: {blob.name} ===\n{text[:5000]}\n"
+                    elif blob.name.endswith((".csv", ".tsv")):
+                        # Efficiently read CSV
+                        sep = '\t' if blob.name.endswith('.tsv') else ','
+                        df = pd.read_csv(io.BytesIO(content_bytes), sep=sep, nrows=100) # Limit rows
+                        context += f"=== FILE: {blob.name} ===\n{df.to_string()}\n"
             except Exception as e:
-                context += f"[CLOUD CONNECTION ERROR: {str(e)}]\n"
-        else:
-            context += "[SYSTEM WARN: No Cloud Connection]\n"
-            
+                context += f"[CLOUD ERROR: {str(e)}]"
         return context
-
+    
 class AIEngine:
     def __init__(self):
         try:
