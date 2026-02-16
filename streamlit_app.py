@@ -84,7 +84,7 @@ def inject_custom_css():
 # --- 3. BACKEND LOGIC ---
 
 # !!! CRITICAL: Ensure this matches your actual GCS bucket name !!!
-BUCKET_NAME = "plenary-matrix-460717-u7" 
+BUCKET_NAME = "accounts_data_store" 
 METADATA_BLOB = "metadata.json"
 
 def get_gcs_client():
